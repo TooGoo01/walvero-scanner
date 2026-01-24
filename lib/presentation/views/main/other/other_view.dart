@@ -1,0 +1,154 @@
+import 'package:cached_network_image/cached_network_image.dart';
+
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:sizer/sizer.dart';
+
+import '../../../../core/constant/images.dart';
+import '../../../../core/router/app_router.dart';
+
+import '../../../blocs/user/user_bloc.dart';
+import '../../../widgets/other_item_card.dart';
+
+class OtherView extends StatelessWidget {
+  const OtherView({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      child: ListView(
+        physics: const BouncingScrollPhysics(),
+        children: [
+          const SizedBox(height: 10),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+            child: BlocBuilder<UserBloc, UserState>(
+              builder: (context, state) {
+                if (state is UserLogged) {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pushNamed(
+                        AppRouter.userProfile,
+                        arguments: state.user,
+                      );
+                    },
+                    child: Row(
+                      children: [
+                        state.user.googleLogoUrl != null
+                            ? CachedNetworkImage(
+                                imageUrl: state.user.googleLogoUrl!,
+                                imageBuilder: (context, image) => CircleAvatar(
+                                  radius: 24.sp,
+                                  backgroundImage: image,
+                                  backgroundColor: Colors.transparent,
+                                ),
+                                errorWidget: (context, url, error) => CircleAvatar(
+                                  radius: 24.sp,
+                                  backgroundImage: AssetImage(kUserAvatar),
+                                  backgroundColor: Colors.transparent,
+                                ),
+                              )
+                            : state.user.image != null
+                                ? CachedNetworkImage(
+                                    imageUrl: state.user.image!,
+                                    imageBuilder: (context, image) => CircleAvatar(
+                                      radius: 24.sp,
+                                      backgroundImage: image,
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                    errorWidget: (context, url, error) => CircleAvatar(
+                                      radius: 24.sp,
+                                      backgroundImage: AssetImage(kUserAvatar),
+                                      backgroundColor: Colors.transparent,
+                                    ),
+                                  )
+                                : CircleAvatar(
+                                    radius: 24.sp,
+                                    backgroundImage: AssetImage(kUserAvatar),
+                                    backgroundColor: Colors.transparent,
+                                  ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "${state.user.firstName} ${state.user.lastName}",
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            Text(state.user.email)
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                } else {
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.of(context).pushNamed(AppRouter.signIn);
+                    },
+                    child: Row(
+                      children: [
+                        CircleAvatar(
+                          radius: 24.sp,
+                          backgroundImage: AssetImage(kUserAvatar),
+                          backgroundColor: Colors.transparent,
+                        ),
+                        const SizedBox(width: 12),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              "Login in your account",
+                              style: Theme.of(context).textTheme.titleLarge,
+                            ),
+                            const Text("")
+                          ],
+                        ),
+                      ],
+                    ),
+                  );
+                }
+              },
+            ),
+          ),
+          SizedBox(height: 2.5.h),
+          BlocBuilder<UserBloc, UserState>(
+            builder: (context, state) {
+              return OtherItemCard(
+                onClick: () {
+                  if (state is UserLogged) {
+                    Navigator.of(context).pushNamed(
+                      AppRouter.userProfile,
+                      arguments: state.user,
+                    );
+                  } else {
+                    Navigator.of(context).pushNamed(AppRouter.signIn);
+                  }
+                },
+                title: "Profile",
+              );
+            },
+          ),
+        
+          const SizedBox(height: 6),         
+          BlocBuilder<UserBloc, UserState>(
+            builder: (context, state) {
+              if (state is UserLogged) {
+                return OtherItemCard(
+                  onClick: () {
+                    context.read<UserBloc>().add(SignOutUser());
+                  
+                  },
+                  title: "Sign Out",
+                );
+              } else {
+                return const SizedBox();
+              }
+            },
+          ),
+          SizedBox(height: (MediaQuery.of(context).padding.bottom + 50)),
+        ],
+      ),
+    );
+  }
+}
