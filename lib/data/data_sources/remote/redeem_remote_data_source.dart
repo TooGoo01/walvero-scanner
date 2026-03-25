@@ -13,14 +13,45 @@ import '../../models/redeem/program_ui_config_model.dart';
 import '../../models/redeem/start_redeem_response_model.dart';
 
 abstract class RedeemRemoteDataSource {
-  Future<ProgramUiConfigModel> uiConfig(String token);
-  Future<LookupCardModel> lookupCode(LookupCodeParams params,String token);
-  Future<StartRedeemResponse> startRedeem(StartRedeemParams params,String token);
+  Future<ProgramUiConfigModel> uiConfig(String token, {int? programId});
+  Future<LookupCardModel> lookupCode(LookupCodeParams params, String token, {int? programId});
+  Future<StartRedeemResponse> startRedeem(StartRedeemParams params, String token, {int? programId});
   Future<ConfirmOtpResponse> confirmRedeemOtp(
     ConfirmRedeemOtpParams params,
-    String token
-  );
+    String token, {
+    int? programId,
+  });
+  Future<Map<String, dynamic>> reverseTransaction(ReverseTransactionParams params, String token, {int? programId});
+}
 
+class ReverseTransactionParams {
+  final int transactionId;
+  final String orderId;
+  final String originalType;
+  final String reason;
+
+  const ReverseTransactionParams({
+    required this.transactionId,
+    required this.orderId,
+    required this.originalType,
+    required this.reason,
+  });
+}
+
+Map<String, String> _buildHeaders(String token, {int? programId, bool isPost = false}) {
+  final headers = <String, String>{
+    'Authorization': 'Bearer $token',
+  };
+  if (isPost) {
+    headers['Content-Type'] = 'application/json';
+    headers['Accept'] = 'application/json';
+  } else {
+    headers['Content-Type'] = 'application/json';
+  }
+  if (programId != null) {
+    headers['X-Program-Id'] = programId.toString();
+  }
+  return headers;
 }
 
 class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
@@ -28,42 +59,42 @@ class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
   RedeemRemoteDataSourceImpl({required this.client});
 
   @override
-  Future<ProgramUiConfigModel> uiConfig(token) async {
+  Future<ProgramUiConfigModel> uiConfig(token, {int? programId}) async {
     final response = await client.get(
       Uri.parse('$baseUrl/api/Redeem/UiConfig'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-     
+      headers: _buildHeaders(token, programId: programId),
     );
     if (response.statusCode == 200) {
       return programUiConfigModelFromJson(response.body);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException();
     } else {
       throw ServerException();
     }
   }
- @override
-  Future<LookupCardModel> lookupCode(params,token) async {
+
+  @override
+  Future<LookupCardModel> lookupCode(params, token, {int? programId}) async {
     final response = await client.get(
-      Uri.parse('$baseUrl/api/Redeem/LookupByCode?code=${params.code}&currentPoints=${params.balance}'),
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer $token',
-      },
-    
+      Uri.parse(
+          '$baseUrl/api/Redeem/LookupByCode?code=${params.code}&currentPoints=${params.balance}'),
+      headers: _buildHeaders(token, programId: programId),
     );
     if (response.statusCode == 200) {
       return lookupCardModelFromJson(response.body);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException();
     } else {
       throw ServerException();
     }
   }
- @override
+
+  @override
   Future<StartRedeemResponse> startRedeem(
     StartRedeemParams params,
-    token
-  ) async {
+    token, {
+    int? programId,
+  }) async {
     final uri = Uri.parse('$baseUrl/api/redeem/start');
 
     final body = {
@@ -72,32 +103,31 @@ class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
       'orderId': params.orderId,
       'mode': params.operationType,
       'paymentMethod': params.paymentMethod,
-      'spendCount': params.spendCount, // Null göndərilə bilər
+      'spendCount': params.spendCount,
     };
 
     final response = await client.post(
       uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-      },
+      headers: _buildHeaders(token, programId: programId, isPost: true),
       body: json.encode(body),
     );
 
-    if (response.statusCode != 200) {
-      throw Exception('Start redeem failed');
+    if (response.statusCode == 200) {
+      final jsonMap = json.decode(response.body) as Map<String, dynamic>;
+      return StartRedeemResponseModel.fromJson(jsonMap);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException();
+    } else {
+      throw ServerException();
     }
-
-    final jsonMap = json.decode(response.body) as Map<String, dynamic>;
-    return StartRedeemResponseModel.fromJson(jsonMap);
   }
 
   @override
   Future<ConfirmOtpResponse> confirmRedeemOtp(
     ConfirmRedeemOtpParams params,
-    token
-  ) async {
+    token, {
+    int? programId,
+  }) async {
     final uri = Uri.parse('$baseUrl/api/redeem/confirm');
 
     final body = {
@@ -107,20 +137,48 @@ class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
 
     final response = await client.post(
       uri,
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
-          'Authorization': 'Bearer $token',
-      },
+      headers: _buildHeaders(token, programId: programId, isPost: true),
       body: json.encode(body),
     );
 
-    if (response.statusCode != 200) {
-      throw Exception('Confirm OTP failed');
+    if (response.statusCode == 200) {
+      final jsonMap = json.decode(response.body) as Map<String, dynamic>;
+      return ConfirmOtpResponseModel.fromJson(jsonMap);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException();
+    } else {
+      throw ServerException();
     }
-
-    final jsonMap = json.decode(response.body) as Map<String, dynamic>;
-    return ConfirmOtpResponseModel.fromJson(jsonMap);
   }
- 
+
+  @override
+  Future<Map<String, dynamic>> reverseTransaction(
+    ReverseTransactionParams params,
+    token, {
+    int? programId,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/transaction/Reverse');
+
+    final body = {
+      'transactionId': params.transactionId,
+      'orderId': params.orderId,
+      'originalType': params.originalType,
+      'reason': params.reason,
+      'timestamp': DateTime.now().toUtc().toIso8601String(),
+    };
+
+    final response = await client.post(
+      uri,
+      headers: _buildHeaders(token, programId: programId, isPost: true),
+      body: json.encode(body),
+    );
+
+    if (response.statusCode == 200) {
+      return json.decode(response.body) as Map<String, dynamic>;
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException();
+    } else {
+      throw ServerException();
+    }
+  }
 }

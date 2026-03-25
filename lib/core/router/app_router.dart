@@ -12,6 +12,8 @@ import '../../presentation/views/main/other/profile/profile_screen.dart';
 import '../../presentation/views/main/other/settings/settings_view.dart';
 
 import '../../presentation/views/scan/scan_barcode_page.dart';
+import '../../presentation/views/customer/customer_list_view.dart';
+import '../../presentation/views/statistics/statistics_view.dart';
 import '../error/exceptions.dart';
 import 'role_guard.dart';
 
@@ -34,6 +36,8 @@ class AppRouter {
   static const String about = '/about';
   static const String filter = '/filter';
   static const String other = '/other';
+  static const String statistics = '/statistics';
+  static const String customers = '/customers';
 
 
   static Route<dynamic> onGenerateRoute(RouteSettings routeSettings) {
@@ -69,7 +73,20 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const SettingsView());
       case about:
         return MaterialPageRoute(builder: (_) => const AboutView());
-     
+      case statistics:
+        return MaterialPageRoute(
+          builder: (_) => RoleGuard(
+            allowedRoles: const ['Tenant Admin'],
+            child: const StatisticsView(),
+          ),
+        );
+      case customers:
+        return MaterialPageRoute(
+          builder: (_) => RoleGuard(
+            allowedRoles: const ['Tenant Admin'],
+            child: const CustomerListView(),
+          ),
+        );
       default:
         throw const RouteException('Route not found!');
     }

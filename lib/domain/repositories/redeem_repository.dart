@@ -8,6 +8,7 @@ import '../entities/redeem/program_ui_config.dart';
 import '../entities/redeem/start_redeem_response.dart';
 import '../usecases/redeem/get_lookup_bycode_usecase.dart';
 import '../usecases/redeem/start_redeem_usecase.dart';
+import '../../data/data_sources/remote/redeem_remote_data_source.dart' show ReverseTransactionParams;
 
 abstract class RedeemRepository {
  Future<Either<Failure, StartRedeemResponse>> startRedeem(
@@ -22,5 +23,7 @@ abstract class RedeemRepository {
     LookupCodeParams params,
   );
 
-  
+  Future<Either<Failure, Map<String, dynamic>>> reverseTransaction(
+    ReverseTransactionParams params,
+  );
 }

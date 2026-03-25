@@ -2,22 +2,25 @@ import 'package:flutter/material.dart';
 
 class OtherItemCard extends StatelessWidget {
   final String title;
+  final IconData? icon;
+  final Color? iconColor;
   final Function()? onClick;
+
   const OtherItemCard({
     super.key,
     required this.title,
+    this.icon,
+    this.iconColor,
     this.onClick,
   });
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isTablet = screenWidth > 600;
+    final hPadding = isTablet ? screenWidth * 0.15 : 20.0;
     return Padding(
-      padding: const EdgeInsets.only(
-        left: 20,
-        right: 20,
-        bottom: 4,
-        top: 2
-      ),
+      padding: EdgeInsets.only(left: hPadding, right: hPadding, bottom: 6, top: 2),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
         onTap: onClick,
@@ -27,24 +30,35 @@ class OtherItemCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(16),
             boxShadow: [
               BoxShadow(
-                color: Theme.of(context).shadowColor.withOpacity(0.1),
+                color: Theme.of(context).shadowColor.withValues(alpha: 0.08),
                 spreadRadius: 1,
                 blurRadius: 8,
                 offset: const Offset(0, 1),
               ),
             ],
             border: Border.all(
-              color: Theme.of(context).shadowColor.withOpacity(0.1),
+              color: Theme.of(context).shadowColor.withValues(alpha: 0.06),
             ),
           ),
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 25),
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
             child: Row(
               children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleSmall,
-                )
+                if (icon != null) ...[
+                  Icon(icon, size: 22, color: iconColor ?? const Color(0xFF00574C)),
+                  const SizedBox(width: 14),
+                ],
+                Expanded(
+                  child: Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right_rounded,
+                  color: Colors.grey[400],
+                  size: 22,
+                ),
               ],
             ),
           ),

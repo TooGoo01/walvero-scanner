@@ -17,6 +17,8 @@ class LookupCard extends Equatable {
   final int? maxSpendCount; // UI input limiti
   final String? freeRewardLabel; // Mükafat label-i (default: "Pulsuz içki")
   final String? currency; // Valyuta (məs: "AZN", "USD", və s.)
+  final int earnCount; // Qazanma əməliyyat sayı
+  final int spendCount; // Xərcləmə əməliyyat sayı
 
   const LookupCard({
     required this.success,
@@ -32,6 +34,8 @@ class LookupCard extends Equatable {
     this.maxSpendCount,
     this.freeRewardLabel,
     this.currency,
+    this.earnCount = 0,
+    this.spendCount = 0,
   });
 
   // ProgressBased kart yoxlaması

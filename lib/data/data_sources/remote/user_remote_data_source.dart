@@ -10,6 +10,7 @@ import '../../models/user/authentication_response_model.dart';
 abstract class UserRemoteDataSource {
   Future<AuthenticationResponseModel> signIn(SignInParams params);
   Future<AuthenticationResponseModel> signUp(SignUpParams params);
+  Future<AuthenticationResponseModel> refreshToken(String refreshToken);
 }
 
 class UserRemoteDataSourceImpl implements UserRemoteDataSource {
@@ -23,13 +24,16 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
             headers: {
               'Content-Type': 'application/json',
               'accept': 'text/plain',
-
             },
             body: json.encode({
               'userName': params.username,
               'password': params.password,
-            }));
+            })).timeout(const Duration(seconds: 15));
     if (response.statusCode == 200) {
+      final decoded = json.decode(response.body) as Map<String, dynamic>;
+      if (decoded['success'] != true || decoded['data'] == null) {
+        throw CredentialFailure();
+      }
       return authenticationResponseModelFromJson(response.body);
     } else if (response.statusCode == 400 || response.statusCode == 401) {
       throw CredentialFailure();
@@ -55,6 +59,27 @@ class UserRemoteDataSourceImpl implements UserRemoteDataSource {
       return authenticationResponseModelFromJson(response.body);
     } else if (response.statusCode == 400 || response.statusCode == 401) {
       throw CredentialFailure();
+    } else {
+      throw ServerException();
+    }
+  }
+
+  @override
+  Future<AuthenticationResponseModel> refreshToken(String refreshToken) async {
+    final response = await client.post(
+      Uri.parse('$baseUrl/api/auth/refresh-token'),
+      headers: {
+        'Content-Type': 'application/json',
+        'accept': 'text/plain',
+      },
+      body: json.encode({
+        'refreshToken': refreshToken,
+      }),
+    );
+    if (response.statusCode == 200) {
+      return authenticationResponseModelFromJson(response.body);
+    } else if (response.statusCode == 400 || response.statusCode == 401) {
+      throw AuthenticationFailure();
     } else {
       throw ServerException();
     }

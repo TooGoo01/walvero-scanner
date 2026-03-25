@@ -20,6 +20,23 @@ class UserRepositoryImpl implements UserRepository {
     required this.networkInfo,
   });
 
+  Future<void> _saveAuthResponse(AuthenticationResponseModel response) async {
+    await localDataSource.saveToken(response.token);
+    await localDataSource.saveUser(response.user);
+    if (response.refreshToken != null &&
+        response.refreshTokenExpiration != null) {
+      await localDataSource.saveRefreshToken(
+        response.refreshToken!,
+        response.refreshTokenExpiration!,
+      );
+    }
+    // Save default programId so API calls include X-Program-Id from start
+    final defaultProgramId = response.user.programId;
+    if (defaultProgramId != null) {
+      await localDataSource.saveSelectedProgramId(defaultProgramId);
+    }
+  }
+
   @override
   Future<Either<Failure, User>> signIn(params) async {
     if (!await networkInfo.isConnected) {
@@ -27,11 +44,12 @@ class UserRepositoryImpl implements UserRepository {
     }
     try {
       final remoteResponse = await remoteDataSource.signIn(params);
-      await localDataSource.saveToken(remoteResponse.token);
-      await localDataSource.saveUser(remoteResponse.user);
+      await _saveAuthResponse(remoteResponse);
       return Right(remoteResponse.user);
     } on Failure catch (failure) {
       return Left(failure);
+    } catch (_) {
+      return Left(ExceptionFailure());
     }
   }
 
@@ -42,8 +60,7 @@ class UserRepositoryImpl implements UserRepository {
     }
     try {
       final remoteResponse = await remoteDataSource.signUp(params);
-      await localDataSource.saveToken(remoteResponse.token);
-      await localDataSource.saveUser(remoteResponse.user);
+      await _saveAuthResponse(remoteResponse);
       return Right(remoteResponse.user);
     } on Failure catch (failure) {
       return Left(failure);
@@ -67,6 +84,36 @@ class UserRepositoryImpl implements UserRepository {
       return Right(user);
     } on CacheFailure {
       return Left(CacheFailure());
+    }
+  }
+
+  @override
+  Future<Either<Failure, User>> refreshToken() async {
+    if (!await networkInfo.isConnected) {
+      return Left(NetworkFailure());
+    }
+    try {
+      final storedRefreshToken = await localDataSource.getRefreshToken();
+      final refreshExpiration =
+          await localDataSource.getRefreshTokenExpiration();
+
+      if (storedRefreshToken == null) {
+        return Left(AuthenticationFailure());
+      }
+
+      if (refreshExpiration != null &&
+          refreshExpiration.toUtc().isBefore(DateTime.now().toUtc())) {
+        return Left(AuthenticationFailure());
+      }
+
+      final remoteResponse =
+          await remoteDataSource.refreshToken(storedRefreshToken);
+      await _saveAuthResponse(remoteResponse);
+      return Right(remoteResponse.user);
+    } on Failure catch (failure) {
+      return Left(failure);
+    } catch (_) {
+      return Left(AuthenticationFailure());
     }
   }
 }

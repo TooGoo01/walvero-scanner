@@ -16,3 +16,5 @@ class SignUpUser extends UserEvent {
 class SignOutUser extends UserEvent {}
 
 class CheckUser extends UserEvent {}
+
+class RefreshTokenUser extends UserEvent {}

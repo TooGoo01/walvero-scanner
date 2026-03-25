@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
+import '../../../l10n/app_localizations.dart';
 
 class ScanBarcodePage extends StatefulWidget {
   const ScanBarcodePage({super.key});
@@ -39,12 +40,13 @@ void _onDetect(BarcodeCapture capture) {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
         foregroundColor: Colors.white,
-        title: const Text('Kod skan et'),
+        title: Text(l.scanCode),
         actions: [
           IconButton(
             icon: const Icon(Icons.cameraswitch),
@@ -66,16 +68,25 @@ void _onDetect(BarcodeCapture capture) {
 
           // Overlay (ortada çərçivə)
           Center(
-            child: Container(
-              width: 300,
-              height: 160,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.9),
-                  width: 2,
-                ),
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                final screenWidth = MediaQuery.of(context).size.width;
+                final overlayWidth = screenWidth > 600
+                    ? screenWidth * 0.5  // tablet
+                    : screenWidth * 0.78; // phone
+                final overlayHeight = overlayWidth * 0.53;
+                return Container(
+                  width: overlayWidth,
+                  height: overlayHeight,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.9),
+                      width: 2,
+                    ),
+                  ),
+                );
+              },
             ),
           ),
 
@@ -85,7 +96,7 @@ void _onDetect(BarcodeCapture capture) {
             child: Padding(
               padding: const EdgeInsets.all(24.0),
               child: Text(
-                'QR / barkodu çərçivənin içinə gətirin',
+                l.scanHint,
                 style: TextStyle(
                   color: Colors.white.withOpacity(0.9),
                   fontSize: 14,

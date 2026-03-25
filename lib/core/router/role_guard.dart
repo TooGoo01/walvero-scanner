@@ -1,12 +1,8 @@
-
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../../presentation/blocs/user/user_bloc.dart';
-import '../../presentation/views/authentication/access_denied.dart';
 import '../../presentation/views/authentication/signin_view.dart';
-
-
 
 class RoleGuard extends StatelessWidget {
   final Widget child;
@@ -22,28 +18,40 @@ class RoleGuard extends StatelessWidget {
   Widget build(BuildContext context) {
     return BlocBuilder<UserBloc, UserState>(
       builder: (context, state) {
-        // 1) Login olmayıbsa → login səhifəsi
-        if (state is! UserLogged) {
+        if (state is UserLoggedOut || state is UserLoggedFail) {
           return const SignInView();
         }
-       final DateTime expirationDateUtc = state.user.expiration!.toUtc(); // Assuming state.user.expiration is a DateTime
 
-
-     final DateTime nowUtc = DateTime.now().toUtc(); 
-
-
-      final bool isExpired = expirationDateUtc.isBefore(nowUtc);
-
-        // 2) Login olub → rollara baxırıq
-        final roles = state.user.roles;
-        final hasAccess =
-            roles.any((r) => allowedRoles.contains(r)); // kəsişmə varsa
-
-        if (!hasAccess || isExpired ) {
-           context.read<UserBloc>().add(SignOutUser());
+        if (state is! UserLogged) {
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
         }
 
-        // 3) Hamısı qaydasındadır → əsl səhifəni göstər
+        final DateTime expirationDateUtc = state.user.expiration.toUtc();
+        final DateTime nowUtc = DateTime.now().toUtc();
+        final bool isExpired = expirationDateUtc.isBefore(nowUtc);
+
+        if (isExpired) {
+          // Token bitib → refresh etməyə çalış
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<UserBloc>().add(RefreshTokenUser());
+          });
+          return const Scaffold(
+            body: Center(child: CircularProgressIndicator()),
+          );
+        }
+
+        final roles = state.user.roles;
+        final hasAccess = roles.any((r) => allowedRoles.contains(r));
+
+        if (!hasAccess) {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            context.read<UserBloc>().add(SignOutUser());
+          });
+          return const SignInView();
+        }
+
         return child;
       },
     );

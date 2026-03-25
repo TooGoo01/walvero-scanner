@@ -9,6 +9,7 @@ import '../../../core/constant/validators.dart';
 import '../../../core/error/failures.dart';
 import '../../../core/router/app_router.dart';
 import '../../../domain/usecases/user/sign_up_usecase.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../blocs/user/user_bloc.dart';
 import '../../widgets/input_form_button.dart';
 import '../../widgets/input_text_form_field.dart';
@@ -31,23 +32,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return BlocListener<UserBloc, UserState>(
       listener: (context, state) {
         EasyLoading.dismiss();
         if (state is UserLoading) {
-          EasyLoading.show(status: 'Loading...');
+          EasyLoading.show(status: l.loading);
         } else if (state is UserLogged) {
-          
+
           Navigator.of(context).pushNamedAndRemoveUntil(
             AppRouter.home,
             (Route<dynamic> route) => false,
           );
         } else if (state is UserLoggedFail) {
-          String errorMessage = "An error occurred. Please try again.";
+          String errorMessage = l.error;
           if (state.failure is CredentialFailure) {
-            errorMessage = "Incorrect username or password.";
+            errorMessage = l.invalidCredentials;
           } else if (state.failure is NetworkFailure) {
-            errorMessage = "Network error. Check your connection.";
+            errorMessage = l.noInternet;
           }
           EasyLoading.showError(errorMessage);
         }
@@ -75,9 +77,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   const SizedBox(
                     height: 10,
                   ),
-                  const Text(
-                    "Please use your e-mail address to crate a new account",
-                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  Text(
+                    l.signUpSubtitle,
+                    style: const TextStyle(fontSize: 16, color: Colors.grey),
                     textAlign: TextAlign.center,
                   ),
                   SizedBox(
@@ -85,27 +87,27 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   InputTextFormField(
                     controller: _firstNameController,
-                    hint: 'First Name',
+                    hint: l.firstName,
                     textInputAction: TextInputAction.next,
                     validation: (String? val) =>
-                        Validators.validateField(val, "First name"),
+                        Validators.validateField(val, l.firstName),
                   ),
                   const SizedBox(
                     height: 12,
                   ),
                   InputTextFormField(
                     controller: _lastNameController,
-                    hint: 'Last Name',
+                    hint: l.lastName,
                     textInputAction: TextInputAction.next,
                     validation: (String? val) =>
-                        Validators.validateField(val, "Last name"),
+                        Validators.validateField(val, l.lastName),
                   ),
                   const SizedBox(
                     height: 12,
                   ),
                   InputTextFormField(
                     controller: _emailController,
-                    hint: 'Email',
+                    hint: l.email,
                     textInputAction: TextInputAction.next,
                     validation: (String? val) => Validators.validateEmail(val),
                   ),
@@ -114,18 +116,18 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   ),
                   InputTextFormField(
                     controller: _passwordController,
-                    hint: 'Password',
+                    hint: l.password,
                     textInputAction: TextInputAction.next,
                     isSecureField: true,
                     validation: (String? val) =>
-                        Validators.validateField(val, "Password"),
+                        Validators.validateField(val, l.password),
                   ),
                   const SizedBox(
                     height: 12,
                   ),
                   InputTextFormField(
                     controller: _confirmPasswordController,
-                    hint: 'Confirm Password',
+                    hint: l.password,
                     isSecureField: true,
                     textInputAction: TextInputAction.go,
                     validation: (String? val) =>
@@ -141,7 +143,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   InputFormButton(
                     color: Colors.black87,
                     onClick: () => _onSignUp(context),
-                    titleText: 'Sign Up',
+                    titleText: l.signUp,
                   ),
                   const SizedBox(
                     height: 10,
@@ -151,7 +153,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     onClick: () {
                       Navigator.of(context).pop();
                     },
-                    titleText: 'Back',
+                    titleText: l.cancel,
                   ),
                   const SizedBox(
                     height: 30,
@@ -166,9 +168,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
   }
 
   void _onSignUp(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     if (_formKey.currentState!.validate()) {
       if (_passwordController.text != _confirmPasswordController.text) {
-        EasyLoading.showError("Passwords do not match!");
+        EasyLoading.showError(l.error);
         return;
       }
       context.read<UserBloc>().add(SignUpUser(SignUpParams(

@@ -4,6 +4,7 @@ import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 
 import 'package:flutter/cupertino.dart';
+import 'package:walveroScanner/domain/usecases/user/refresh_token_usecase.dart';
 import 'package:walveroScanner/domain/usecases/user/sign_out_usecase.dart' show SignOutUseCase;
 import 'package:walveroScanner/domain/usecases/user/sign_up_usecase.dart' show SignUpParams, SignUpUseCase;
 
@@ -21,19 +22,23 @@ class UserBloc extends Bloc<UserEvent, UserState> {
   final SignInUseCase _signInUseCase;
   final SignUpUseCase _signUpUseCase;
   final SignOutUseCase _signOutUseCase;
+  final RefreshTokenUseCase _refreshTokenUseCase;
+
   UserBloc(
     this._signInUseCase,
     this._getCachedUserUseCase,
     this._signOutUseCase,
     this._signUpUseCase,
+    this._refreshTokenUseCase,
   ) : super(UserInitial()) {
     on<SignInUser>(_onSignIn);
     on<SignUpUser>(_onSignUp);
     on<CheckUser>(_onCheckUser);
     on<SignOutUser>(_onSignOut);
+    on<RefreshTokenUser>(_onRefreshToken);
   }
 
-  void _onSignIn(SignInUser event, Emitter<UserState> emit) async {
+  Future<void> _onSignIn(SignInUser event, Emitter<UserState> emit) async {
     try {
       emit(UserLoading());
       final result = await _signInUseCase(event.params);
@@ -46,13 +51,21 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     }
   }
 
-  void _onCheckUser(CheckUser event, Emitter<UserState> emit) async {
+  Future<void> _onCheckUser(CheckUser event, Emitter<UserState> emit) async {
     try {
       emit(UserLoading());
       final result = await _getCachedUserUseCase(NoParams());
       result.fold(
         (failure) => emit(UserLoggedFail(failure)),
-        (user) => emit(UserLogged(user)),
+        (user) {
+          final isExpired =
+              user.expiration.toUtc().isBefore(DateTime.now().toUtc());
+          if (isExpired && user.id.isNotEmpty) {
+            add(RefreshTokenUser());
+          } else {
+            emit(UserLogged(user));
+          }
+        },
       );
     } catch (e) {
       emit(UserLoggedFail(ExceptionFailure()));
@@ -72,13 +85,26 @@ class UserBloc extends Bloc<UserEvent, UserState> {
     }
   }
 
-  void _onSignOut(SignOutUser event, Emitter<UserState> emit) async {
+  Future<void> _onSignOut(SignOutUser event, Emitter<UserState> emit) async {
     try {
       emit(UserLoading());
       await _signOutUseCase(NoParams());
       emit(UserLoggedOut());
     } catch (e) {
       emit(UserLoggedFail(ExceptionFailure()));
+    }
+  }
+
+  FutureOr<void> _onRefreshToken(
+      RefreshTokenUser event, Emitter<UserState> emit) async {
+    try {
+      final result = await _refreshTokenUseCase(NoParams());
+      result.fold(
+        (failure) => emit(UserLoggedOut()),
+        (user) => emit(UserLogged(user)),
+      );
+    } catch (e) {
+      emit(UserLoggedOut());
     }
   }
 }

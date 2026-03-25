@@ -6,19 +6,21 @@ import '../../models/user/user_model.dart';
 
 abstract class UserLocalDataSource {
   Future<String> getToken();
-
   Future<UserModel> getUser();
-
   Future<void> saveToken(String token);
-
   Future<void> saveUser(UserModel user);
-
   Future<void> clearCache();
-
   Future<bool> isTokenAvailable();
+  Future<void> saveRefreshToken(String refreshToken, DateTime expiration);
+  Future<String?> getRefreshToken();
+  Future<DateTime?> getRefreshTokenExpiration();
+  Future<void> saveSelectedProgramId(int programId);
+  Future<int?> getSelectedProgramId();
 }
 
 const cachedToken = 'TOKEN';
+const cachedRefreshToken = 'REFRESH_TOKEN';
+const cachedRefreshTokenExpiration = 'REFRESH_TOKEN_EXPIRATION';
 const cachedUser = 'USER';
 
 class UserLocalDataSourceImpl implements UserLocalDataSource {
@@ -43,6 +45,29 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   }
 
   @override
+  Future<void> saveRefreshToken(String refreshToken, DateTime expiration) async {
+    await secureStorage.write(key: cachedRefreshToken, value: refreshToken);
+    await secureStorage.write(
+      key: cachedRefreshTokenExpiration,
+      value: expiration.toIso8601String(),
+    );
+  }
+
+  @override
+  Future<String?> getRefreshToken() async {
+    return await secureStorage.read(key: cachedRefreshToken);
+  }
+
+  @override
+  Future<DateTime?> getRefreshTokenExpiration() async {
+    final expStr = await secureStorage.read(key: cachedRefreshTokenExpiration);
+    if (expStr != null) {
+      return DateTime.parse(expStr);
+    }
+    return null;
+  }
+
+  @override
   Future<UserModel> getUser() async {
     if (sharedPreferences.getBool('first_run') ?? true) {
       await secureStorage.deleteAll();
@@ -51,9 +76,8 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
     final jsonString = sharedPreferences.getString(cachedUser);
     if (jsonString != null) {
       return Future.value(userModelFromJson(jsonString));
-    }
-     else {
-     return UserModel.empty();
+    } else {
+      return UserModel.empty();
     }
   }
 
@@ -72,9 +96,19 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   }
 
   @override
+  Future<void> saveSelectedProgramId(int programId) async {
+    await sharedPreferences.setInt('SELECTED_PROGRAM_ID', programId);
+  }
+
+  @override
+  Future<int?> getSelectedProgramId() async {
+    return sharedPreferences.getInt('SELECTED_PROGRAM_ID');
+  }
+
+  @override
   Future<void> clearCache() async {
     await secureStorage.deleteAll();
-   
     await sharedPreferences.remove(cachedUser);
+    await sharedPreferences.remove('SELECTED_PROGRAM_ID');
   }
 }

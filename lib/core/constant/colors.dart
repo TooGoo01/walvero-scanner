@@ -12,3 +12,13 @@ Color kDarkPrimaryColor = const Color(0xFF1A2127);
 Color kDarkAccentColor = Colors.blueGrey.shade600;
 Color kDarkParticlesColor = const Color(0x441C2A3D);
 Color kDarkTextColor = Colors.white;
+
+// Brand colors
+Color kPrimaryColor = const Color(0xFF00574C);
+Color kPrimaryGradientEnd = const Color(0xFF008066);
+Color kSurfaceColor = const Color(0xFFF5F7FA);
+Color kSuccessColor = const Color(0xFF10B981);
+Color kErrorColor = const Color(0xFFEF4444);
+Color kCardShadowColor = const Color(0x1A000000);
+Color kEarnColor = const Color(0xFF10B981);
+Color kPayColor = const Color(0xFFEF4444);

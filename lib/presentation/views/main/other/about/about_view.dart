@@ -1,13 +1,16 @@
 import 'package:flutter/material.dart';
 
+import '../../../../../l10n/app_localizations.dart';
+
 class AboutView extends StatelessWidget {
   const AboutView({super.key});
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context)!;
     return Scaffold(
       appBar: AppBar(
-        title: const Text("About"),
+        title: Text(l.about),
       ),
       body: const Padding(
         padding: EdgeInsets.symmetric(horizontal: 20, vertical: 18),

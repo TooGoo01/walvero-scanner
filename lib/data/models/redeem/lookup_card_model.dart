@@ -65,6 +65,8 @@ class LookupCardModel extends LookupCard {
     super.maxSpendCount,
     super.freeRewardLabel,
     super.currency,
+    super.earnCount = 0,
+    super.spendCount = 0,
   });
 
   factory LookupCardModel.fromJson(Map<String, dynamic> json) {
@@ -82,6 +84,8 @@ class LookupCardModel extends LookupCard {
       maxSpendCount: (json['maxSpendCount'] as num?)?.toInt(),
       freeRewardLabel: json['freeRewardLabel'] as String? ?? 'Pulsuz içki',
       currency: json['currency'] as String?,
+      earnCount: (json['earnCount'] as num?)?.toInt() ?? 0,
+      spendCount: (json['spendCount'] as num?)?.toInt() ?? 0,
     );
   }
 
