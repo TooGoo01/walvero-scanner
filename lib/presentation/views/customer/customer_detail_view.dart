@@ -196,15 +196,14 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
             Row(
               children: [
                 _cardStat('Cari xal', card.currentPoints.toString()),
-                _cardStat('Ömürlük xal', card.lifetimePoints.toString()),
                 _cardStat('Mükafat', card.availableRewardCount.toString()),
+                _cardStat('Tamamlanan', card.completedCycles.toString()),
               ],
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 _cardStat('Addımlar', card.currentSteps.toString()),
-                _cardStat('Tamamlanan', card.completedCycles.toString()),
                 if (card.currency != null)
                   _cardStat('Valyuta', card.currency!),
               ],

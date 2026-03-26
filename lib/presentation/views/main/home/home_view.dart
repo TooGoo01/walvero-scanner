@@ -6,6 +6,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 import '../../../../core/constant/colors.dart';
 import '../../../../core/constant/images.dart';
@@ -78,6 +79,9 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     );
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      // Login-dən qalan loading-i bağla
+      EasyLoading.dismiss(animation: false);
+
       // Əgər selectedProgramId yoxdursa, ilk programı seç
       final userState = context.read<UserBloc>().state;
       if (userState is UserLogged && userState.user.programs.isNotEmpty) {

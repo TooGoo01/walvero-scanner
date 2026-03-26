@@ -70,6 +70,8 @@ class _SignInViewState extends State<SignInView> {
           EasyLoading.show(status: l.loading);
         } else if (state is UserLogged) {
           await EasyLoading.dismiss(animation: false);
+          // Dismiss-in tamamlanması üçün gözlə
+          await Future.delayed(const Duration(milliseconds: 100));
           if (context.mounted) {
             context.read<NavbarCubit>().update(0);
             Navigator.of(context).pushNamedAndRemoveUntil(

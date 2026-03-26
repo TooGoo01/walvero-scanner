@@ -36,6 +36,7 @@ class Transaction extends Equatable {
   });
 
   String get typeName {
+    if (isReversed) return 'Reverse';
     switch (type) {
       case 1: return 'Earned';
       case 2: return 'Redeemed';
