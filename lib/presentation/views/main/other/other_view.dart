@@ -30,7 +30,7 @@ class OtherView extends StatelessWidget {
           physics: const BouncingScrollPhysics(),
           children: [
             const SizedBox(height: 16),
-            // User profile header
+            // User profile header with account switcher
             Padding(
               padding:
                   EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 10),
@@ -215,6 +215,7 @@ class OtherView extends StatelessWidget {
           arguments: state.user,
         );
       },
+      onLongPress: () => _showAccountSwitcher(context, state),
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
@@ -228,55 +229,298 @@ class OtherView extends StatelessWidget {
             ),
           ],
         ),
-        child: Row(
+        child: Column(
           children: [
-            _buildAvatar(state),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${state.user.firstName} ${state.user.lastName}",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    state.user.email,
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                  if (state.user.isTenantAdmin) ...[
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 3),
-                      decoration: BoxDecoration(
-                        color:
-                            const Color(0xFF00574C).withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(8),
+            Row(
+              children: [
+                _buildAvatar(state),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${state.user.firstName} ${state.user.lastName}",
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
                       ),
-                      child: Text(
-                        AppLocalizations.of(context)!.tenantAdmin,
+                      const SizedBox(height: 2),
+                      Text(
+                        state.user.email,
                         style: TextStyle(
-                          fontSize: 11,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFF00574C),
+                          fontSize: 13,
+                          color: Colors.grey[600],
                         ),
                       ),
+                      if (state.user.isTenantAdmin) ...[
+                        const SizedBox(height: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 8, vertical: 3),
+                          decoration: BoxDecoration(
+                            color:
+                                const Color(0xFF00574C).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            AppLocalizations.of(context)!.tenantAdmin,
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFF00574C),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+                // Account switcher button - həmişə göstər
+                GestureDetector(
+                  onTap: () => _showAccountSwitcher(context, state),
+                  child: Container(
+                    padding: const EdgeInsets.all(6),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF5F7FA),
+                      borderRadius: BorderRadius.circular(10),
                     ),
-                  ],
+                    child: const Icon(
+                      Icons.swap_vert_rounded,
+                      color: Color(0xFF00574C),
+                      size: 20,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            // Saved accounts preview or add account hint
+            const SizedBox(height: 12),
+            const Divider(height: 1),
+            const SizedBox(height: 8),
+            GestureDetector(
+              onTap: () => _showAccountSwitcher(context, state),
+              child: Row(
+                children: [
+                  // Show other account avatars
+                  ...state.savedAccounts
+                      .where((a) => a.userId != state.user.id)
+                      .take(3)
+                      .map((a) => Padding(
+                            padding: const EdgeInsets.only(right: 4),
+                            child: CircleAvatar(
+                              radius: 12,
+                              backgroundColor: const Color(0xFF00574C),
+                              child: Text(
+                                a.firstName.isNotEmpty
+                                    ? a.firstName[0].toUpperCase()
+                                    : a.userName[0].toUpperCase(),
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          )),
+                  if (state.savedAccounts.where((a) => a.userId != state.user.id).isEmpty)
+                    Icon(Icons.person_add_outlined, size: 18, color: Colors.grey[500]),
+                  const SizedBox(width: 8),
+                  Text(
+                    state.savedAccounts.where((a) => a.userId != state.user.id).isNotEmpty
+                        ? AppLocalizations.of(context)!.switchAccount
+                        : AppLocalizations.of(context)!.addAccount,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey[600],
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const Spacer(),
+                  Icon(Icons.chevron_right_rounded,
+                      color: Colors.grey[400], size: 18),
                 ],
               ),
             ),
-            Icon(Icons.chevron_right_rounded,
-                color: Colors.grey[400], size: 24),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showAccountSwitcher(BuildContext context, UserLogged state) {
+    final l = AppLocalizations.of(context)!;
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (sheetContext) {
+        return Container(
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          padding: const EdgeInsets.fromLTRB(20, 12, 20, 32),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Handle bar
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              Text(
+                l.switchAccount,
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Current active account
+              _buildAccountTile(
+                context: context,
+                name: '${state.user.firstName} ${state.user.lastName}'.trim(),
+                subtitle: state.user.userName,
+                isActive: true,
+                imageUrl: state.user.image ?? state.user.googleLogoUrl,
+                onTap: () => Navigator.pop(context),
+              ),
+              // Saved accounts
+              ...state.savedAccounts
+                  .where((a) => a.userId != state.user.id)
+                  .map((account) => _buildAccountTile(
+                        context: context,
+                        name: account.displayName,
+                        subtitle: account.userName,
+                        isActive: false,
+                        onTap: () {
+                          Navigator.pop(context);
+                          context
+                              .read<UserBloc>()
+                              .add(SwitchAccount(account.userId));
+                        },
+                        onRemove: () {
+                          context
+                              .read<UserBloc>()
+                              .add(RemoveSavedAccount(account.userId));
+                          Navigator.pop(context);
+                        },
+                      )),
+              const SizedBox(height: 12),
+              const Divider(),
+              const SizedBox(height: 12),
+              // Add account button
+              ListTile(
+                leading: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF5F7FA),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.person_add_outlined,
+                    color: Color(0xFF00574C),
+                    size: 22,
+                  ),
+                ),
+                title: Text(
+                  l.addAccount,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 15,
+                  ),
+                ),
+                onTap: () {
+                  Navigator.pop(context);
+                  // Save current account, then navigate to sign-in (no logout)
+                  context.read<UserBloc>().add(SaveCurrentAccount());
+                  Navigator.of(context).pushNamed(AppRouter.signIn);
+                },
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAccountTile({
+    required BuildContext context,
+    required String name,
+    required String subtitle,
+    required bool isActive,
+    String? imageUrl,
+    VoidCallback? onTap,
+    VoidCallback? onRemove,
+  }) {
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      leading: CircleAvatar(
+        radius: 22,
+        backgroundColor: const Color(0xFF00574C),
+        backgroundImage: imageUrl != null ? NetworkImage(imageUrl) : null,
+        child: imageUrl == null
+            ? Text(
+                name.isNotEmpty ? name[0].toUpperCase() : '?',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
+                  fontSize: 16,
+                ),
+              )
+            : null,
+      ),
+      title: Text(
+        name.isEmpty ? subtitle : name,
+        style: TextStyle(
+          fontWeight: isActive ? FontWeight.w700 : FontWeight.w500,
+          fontSize: 14,
+        ),
+      ),
+      subtitle: Text(
+        subtitle,
+        style: TextStyle(fontSize: 12, color: Colors.grey[600]),
+      ),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (isActive)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: const Color(0xFF00574C).withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                AppLocalizations.of(context)!.active,
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w600,
+                  color: Color(0xFF00574C),
+                ),
+              ),
+            ),
+          if (!isActive && onRemove != null)
+            IconButton(
+              icon: Icon(Icons.close, size: 18, color: Colors.grey[400]),
+              onPressed: onRemove,
+            ),
+        ],
+      ),
+      onTap: onTap,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
       ),
     );
   }

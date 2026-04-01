@@ -358,4 +358,13 @@ class AppLocalizationsRu extends AppLocalizations {
 
   @override
   String get cardLabel => 'Карта';
+
+  @override
+  String get switchAccount => 'Сменить аккаунт';
+
+  @override
+  String get addAccount => 'Добавить аккаунт';
+
+  @override
+  String get active => 'Активный';
 }

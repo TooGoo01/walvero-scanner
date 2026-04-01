@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:intl/intl.dart';
 
 import '../../../core/services/services_locator.dart';
 import '../../../domain/entities/statistics/dashboard_statistics.dart';
@@ -107,6 +108,10 @@ class _StatisticsViewState extends State<StatisticsView> {
           const SizedBox(height: 16),
           _buildSummaryCards(stats),
           const SizedBox(height: 20),
+          if (stats.recentTransactions.isNotEmpty) ...[
+            _buildRecentTransactions(stats),
+            const SizedBox(height: 20),
+          ],
           _buildPeriodToggle(),
           const SizedBox(height: 12),
           _buildDailyList(stats),
@@ -199,6 +204,100 @@ class _StatisticsViewState extends State<StatisticsView> {
             color: const Color(0xFF00574C),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildRecentTransactions(DashboardStatistics stats) {
+    final dateFormat = DateFormat('dd.MM.yyyy HH:mm');
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(14),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.history_rounded, size: 18, color: Color(0xFF00574C)),
+              const SizedBox(width: 8),
+              const Text(
+                'Son Əməliyyatlar',
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 10),
+          ...stats.recentTransactions.map((tx) {
+            final isEarn = tx.type == 'Earned' || tx.type == 'Bonus';
+            final isRedeem = tx.type == 'Redeemed';
+            final color = isEarn
+                ? const Color(0xFF388E3C)
+                : isRedeem
+                    ? const Color(0xFFE64A19)
+                    : const Color(0xFFFF9800);
+            final icon = isEarn
+                ? Icons.add_circle_outline_rounded
+                : isRedeem
+                    ? Icons.remove_circle_outline_rounded
+                    : Icons.swap_horiz_rounded;
+            final prefix = isEarn ? '+' : isRedeem ? '-' : '';
+
+            return Padding(
+              padding: const EdgeInsets.symmetric(vertical: 6),
+              child: Row(
+                children: [
+                  Icon(icon, size: 20, color: color),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          tx.customerName,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        Text(
+                          dateFormat.format(tx.createdAt),
+                          style: TextStyle(
+                            fontSize: 10,
+                            color: Colors.grey[500],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    '$prefix${tx.points}',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: color,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
+        ],
       ),
     );
   }

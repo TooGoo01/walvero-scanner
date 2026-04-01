@@ -127,5 +127,8 @@
   "currentSteps": "Cari addım",
   "completedCycles": "Tamamlanmış dövr",
   "availableRewards": "Mükafat sayı",
-  "cardLabel": "Kart"
+  "cardLabel": "Kart",
+  "switchAccount": "Hesab dəyişdir",
+  "addAccount": "Hesab əlavə et",
+  "active": "Aktiv"
 }

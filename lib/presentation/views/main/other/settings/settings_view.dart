@@ -26,7 +26,9 @@ class SettingsView extends StatelessWidget {
         return ListView(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16),
         children: [
-          Container(
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Container(
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(16),
@@ -79,6 +81,7 @@ class SettingsView extends StatelessWidget {
                 const SizedBox(height: 8),
               ],
             ),
+          ),
           ),
         ],
       );

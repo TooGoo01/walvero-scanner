@@ -15,9 +15,12 @@ class UserLoading extends UserState {
 
 class UserLogged extends UserState {
   final User user;
-  UserLogged(this.user);
+  final List<SavedAccount> savedAccounts;
+  final int switchTimestamp;
+  UserLogged(this.user, {this.savedAccounts = const [], int? switchTimestamp})
+      : switchTimestamp = switchTimestamp ?? DateTime.now().millisecondsSinceEpoch;
   @override
-  List<Object> get props => [user];
+  List<Object> get props => [user, savedAccounts, switchTimestamp];
 }
 
 class UserLoggedFail extends UserState {

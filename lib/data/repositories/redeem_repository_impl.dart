@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:dartz/dartz.dart';
 import 'package:walveroScanner/data/data_sources/remote/redeem_remote_data_source.dart'
     show RedeemRemoteDataSource, ReverseTransactionParams;
@@ -63,28 +64,41 @@ class RedeemRepositoryImpl implements RedeemRepository {
   @override
   Future<Either<Failure, ProgramUiConfig>> getRemoteUI() async {
     if (!await networkInfo.isConnected) {
+      debugPrint('[UICONFIG] network not connected');
       return Left(NetworkFailure());
     }
     final token = await userLocalDataSource.getToken();
     if (token.isEmpty) {
+      debugPrint('[UICONFIG] token is EMPTY');
       return Left(AuthenticationFailure());
     }
     final programId = await _getSelectedProgramId();
+    debugPrint('[UICONFIG] token=${token.substring(0, 20)}..., programId=$programId');
     try {
       final result = await remoteDataSource.uiConfig(token, programId: programId);
+      debugPrint('[UICONFIG] SUCCESS');
       return Right(result);
     } on UnauthorizedException {
+      debugPrint('[UICONFIG] 401 Unauthorized, trying refresh...');
       final newToken = await _tryRefreshToken();
-      if (newToken == null) return Left(AuthenticationFailure());
+      if (newToken == null) {
+        debugPrint('[UICONFIG] refresh FAILED');
+        return Left(AuthenticationFailure());
+      }
+      debugPrint('[UICONFIG] refresh OK, retrying with new token');
       try {
         final result = await remoteDataSource.uiConfig(newToken, programId: programId);
+        debugPrint('[UICONFIG] retry SUCCESS');
         return Right(result);
-      } catch (_) {
+      } catch (e) {
+        debugPrint('[UICONFIG] retry FAILED: $e');
         return Left(AuthenticationFailure());
       }
     } on Failure catch (failure) {
+      debugPrint('[UICONFIG] Failure: $failure');
       return Left(failure);
-    } catch (_) {
+    } catch (e) {
+      debugPrint('[UICONFIG] EXCEPTION: $e');
       return Left(ServerFailure());
     }
   }

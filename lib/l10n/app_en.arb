@@ -127,5 +127,8 @@
   "currentSteps": "Current steps",
   "completedCycles": "Completed cycles",
   "availableRewards": "Available rewards",
-  "cardLabel": "Card"
+  "cardLabel": "Card",
+  "switchAccount": "Switch Account",
+  "addAccount": "Add Account",
+  "active": "Active"
 }

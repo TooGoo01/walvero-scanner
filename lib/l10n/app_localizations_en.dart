@@ -359,4 +359,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get cardLabel => 'Card';
+
+  @override
+  String get switchAccount => 'Switch Account';
+
+  @override
+  String get addAccount => 'Add Account';
+
+  @override
+  String get active => 'Active';
 }

@@ -24,6 +24,8 @@ class UserModel extends User {
     super.refreshToken,
     super.refreshTokenExpiration,
     super.programs = const [],
+    super.tenantName,
+    super.subscriptionExpiryDate,
   });
 
   factory UserModel.empty() => UserModel(
@@ -42,6 +44,8 @@ class UserModel extends User {
         refreshToken: null,
         refreshTokenExpiration: null,
         programs: const [],
+        tenantName: null,
+        subscriptionExpiryDate: null,
       );
 
   factory UserModel.fromJson(Map<String, dynamic> json) => UserModel(
@@ -76,6 +80,10 @@ class UserModel extends User {
                 ?.map((e) => ProgramSummary.fromJson(e as Map<String, dynamic>))
                 .toList() ??
             const [],
+        tenantName: json['tenantName'] as String?,
+        subscriptionExpiryDate: json['subscriptionExpiryDate'] != null
+            ? DateTime.tryParse(json['subscriptionExpiryDate'] as String)
+            : null,
       );
 
   Map<String, dynamic> toJson() => {
@@ -100,5 +108,7 @@ class UserModel extends User {
                   'programType': p.programType,
                 })
             .toList(),
+        'tenantName': tenantName,
+        'subscriptionExpiryDate': subscriptionExpiryDate?.toIso8601String(),
       };
 }

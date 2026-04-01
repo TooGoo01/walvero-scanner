@@ -127,5 +127,8 @@
   "currentSteps": "Текущие шаги",
   "completedCycles": "Завершённые циклы",
   "availableRewards": "Доступные награды",
-  "cardLabel": "Карта"
+  "cardLabel": "Карта",
+  "switchAccount": "Сменить аккаунт",
+  "addAccount": "Добавить аккаунт",
+  "active": "Активный"
 }

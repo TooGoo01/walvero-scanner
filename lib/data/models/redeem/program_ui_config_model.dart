@@ -18,11 +18,11 @@ class ProgramTierModel extends ProgramTier {
 
   factory ProgramTierModel.fromJson(Map<String, dynamic> json) =>
       ProgramTierModel(
-        name: json['name'] as String,
+        name: json['name'] as String? ?? '',
         threshold: json['threshold'] == null
             ? null
             : (json['threshold'] as num).toInt(),
-        percent: (json['percent'] as num).toInt(),
+        percent: (json['percent'] as num?)?.toInt() ?? 0,
         iconUrl: json['iconUrl'] as String?,
       );
 

@@ -18,3 +18,19 @@ class SignOutUser extends UserEvent {}
 class CheckUser extends UserEvent {}
 
 class RefreshTokenUser extends UserEvent {}
+
+class SwitchAccount extends UserEvent {
+  final String userId;
+  SwitchAccount(this.userId);
+}
+
+class LoadSavedAccounts extends UserEvent {}
+
+class RemoveSavedAccount extends UserEvent {
+  final String userId;
+  RemoveSavedAccount(this.userId);
+}
+
+class SaveAndAddAccount extends UserEvent {}
+
+class SaveCurrentAccount extends UserEvent {}

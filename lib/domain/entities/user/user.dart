@@ -53,6 +53,8 @@ class User extends Equatable {
   final String? refreshToken;
   final DateTime? refreshTokenExpiration;
   final List<ProgramSummary> programs;
+  final String? tenantName;
+  final DateTime? subscriptionExpiryDate;
 
   const User({
     required this.id,
@@ -70,6 +72,8 @@ class User extends Equatable {
     this.refreshToken,
     this.refreshTokenExpiration,
     this.programs = const [],
+    this.tenantName,
+    this.subscriptionExpiryDate,
   });
 
   bool get isTenantAdmin => roles.contains('Tenant Admin');
@@ -92,5 +96,7 @@ class User extends Equatable {
         refreshToken,
         refreshTokenExpiration,
         programs,
+        tenantName,
+        subscriptionExpiryDate,
       ];
 }

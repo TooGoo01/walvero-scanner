@@ -128,7 +128,7 @@ sl.registerLazySingleton(() => ConfirmRedeemOtpUseCase(sl()));
   //Features - User
   // Bloc
   sl.registerFactory(
-    () => UserBloc(sl(), sl(), sl(), sl(), sl()),
+    () => UserBloc(sl(), sl(), sl(), sl(), sl(), sl()),
   );
   // Use cases
   sl.registerLazySingleton(() => GetLocalUserUseCase(sl()));

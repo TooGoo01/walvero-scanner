@@ -359,4 +359,13 @@ class AppLocalizationsAz extends AppLocalizations {
 
   @override
   String get cardLabel => 'Kart';
+
+  @override
+  String get switchAccount => 'Hesab dəyişdir';
+
+  @override
+  String get addAccount => 'Hesab əlavə et';
+
+  @override
+  String get active => 'Aktiv';
 }

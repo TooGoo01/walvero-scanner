@@ -803,6 +803,24 @@ abstract class AppLocalizations {
   /// In az, this message translates to:
   /// **'Kart'**
   String get cardLabel;
+
+  /// No description provided for @switchAccount.
+  ///
+  /// In az, this message translates to:
+  /// **'Hesab dəyişdir'**
+  String get switchAccount;
+
+  /// No description provided for @addAccount.
+  ///
+  /// In az, this message translates to:
+  /// **'Hesab əlavə et'**
+  String get addAccount;
+
+  /// No description provided for @active.
+  ///
+  /// In az, this message translates to:
+  /// **'Aktiv'**
+  String get active;
 }
 
 class _AppLocalizationsDelegate

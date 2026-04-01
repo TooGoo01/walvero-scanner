@@ -127,5 +127,8 @@
   "currentSteps": "الخطوات الحالية",
   "completedCycles": "الدورات المكتملة",
   "availableRewards": "المكافآت المتاحة",
-  "cardLabel": "البطاقة"
+  "cardLabel": "البطاقة",
+  "switchAccount": "تبديل الحساب",
+  "addAccount": "إضافة حساب",
+  "active": "نشط"
 }

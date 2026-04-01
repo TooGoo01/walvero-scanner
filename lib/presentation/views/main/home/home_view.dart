@@ -477,7 +477,20 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         children: [
           SafeArea(
             top: false,
-            child: BlocListener<RedeemBloc, RedeemState>(
+            child: BlocListener<UserBloc, UserState>(
+              listener: (context, state) {
+                if (state is UserLogged) {
+                  // User/hesab dəyişdikdə UI-ı tamamilə yenilə
+                  _codeController.clear();
+                  _deltaController.text = '1';
+                  _orderIdController.clear();
+                  _spendCountController.text = '1';
+                  context.read<RedeemBloc>().add(RedeemCustomerCleared());
+                  context.read<RedeemBloc>().add(const LoadUiConfig());
+                  setState(() {});
+                }
+              },
+              child: BlocListener<RedeemBloc, RedeemState>(
               listener: (context, state) async {
                 final l = AppLocalizations.of(context)!;
                 if (state is RedeemOtpRequired) {
@@ -551,6 +564,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 },
               ),
             ),
+          ),
           ),
           // Success overlay
           if (_showSuccessOverlay) _buildSuccessOverlay(),

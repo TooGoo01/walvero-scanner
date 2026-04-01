@@ -358,4 +358,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get cardLabel => 'البطاقة';
+
+  @override
+  String get switchAccount => 'تبديل الحساب';
+
+  @override
+  String get addAccount => 'إضافة حساب';
+
+  @override
+  String get active => 'نشط';
 }
