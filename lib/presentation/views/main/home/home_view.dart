@@ -13,9 +13,8 @@ import '../../../../core/constant/images.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/services_locator.dart';
 import '../../../../data/data_sources/local/user_local_data_source.dart';
-import '../../../../data/data_sources/remote/redeem_remote_data_source.dart' show ReverseTransactionParams;
 import '../../../../domain/entities/redeem/program_ui_config.dart';
-import '../../../../domain/repositories/redeem_repository.dart';
+import '../../../../domain/repositories/customer_repository.dart';
 import '../../../../domain/entities/redeem/redeem_lookup_response.dart';
 import '../../../../domain/usecases/redeem/start_redeem_usecase.dart';
 import '../../../../l10n/app_localizations.dart';
@@ -207,14 +206,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     if (confirmed == true && mounted) {
       final reason = reasonController.text.trim();
       try {
-        final repo = sl<RedeemRepository>();
-        final result = await repo.reverseTransaction(
-          ReverseTransactionParams(
-            transactionId: 0,
-            orderId: customer.cardNumber,
-            originalType: 'earn',
-            reason: reason.isEmpty ? 'Admin reverse' : reason,
-          ),
+        final repo = sl<CustomerRepository>();
+        final result = await repo.reverseLastByCard(
+          cardNumber: customer.cardNumber,
+          reason: reason.isEmpty ? 'Admin reverse' : reason,
         );
         result.fold(
           (failure) {

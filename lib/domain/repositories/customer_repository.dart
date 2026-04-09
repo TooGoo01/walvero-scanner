@@ -13,4 +13,8 @@ abstract class CustomerRepository {
     required String originalType,
     required String reason,
   });
+  Future<Either<Failure, ReverseResult>> reverseLastByCard({
+    required String cardNumber,
+    required String reason,
+  });
 }

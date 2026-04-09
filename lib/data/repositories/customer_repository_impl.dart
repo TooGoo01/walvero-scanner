@@ -89,4 +89,15 @@ class CustomerRepositoryImpl implements CustomerRepository {
             originalType: originalType,
             reason: reason,
           ));
+
+  @override
+  Future<Either<Failure, ReverseResult>> reverseLastByCard({
+    required String cardNumber,
+    required String reason,
+  }) =>
+      _withAuth((token) => remoteDataSource.reverseLastByCard(
+            token,
+            cardNumber: cardNumber,
+            reason: reason,
+          ));
 }

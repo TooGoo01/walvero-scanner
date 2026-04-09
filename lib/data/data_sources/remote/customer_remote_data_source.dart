@@ -16,6 +16,10 @@ abstract class CustomerRemoteDataSource {
     required String originalType,
     required String reason,
   });
+  Future<ReverseResultModel> reverseLastByCard(String token, {
+    required String cardNumber,
+    required String reason,
+  });
 }
 
 class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
@@ -74,6 +78,32 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
       'originalType': originalType,
       'reason': reason,
       'timestamp': DateTime.now().toUtc().toIso8601String(),
+    });
+
+    final response = await client.post(uri, headers: _headers(token), body: body).timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) {
+      final decoded = json.decode(response.body) as Map<String, dynamic>;
+      if (decoded['success'] == false || decoded['data'] == null) {
+        throw ServerException();
+      }
+      return reverseResultFromJson(response.body);
+    } else if (response.statusCode == 401) {
+      throw UnauthorizedException();
+    } else {
+      throw ServerException();
+    }
+  }
+
+  @override
+  Future<ReverseResultModel> reverseLastByCard(String token, {
+    required String cardNumber,
+    required String reason,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/Transaction/ReverseLastByCard');
+    final body = json.encode({
+      'cardNumber': cardNumber,
+      'reason': reason,
     });
 
     final response = await client.post(uri, headers: _headers(token), body: body).timeout(const Duration(seconds: 15));
