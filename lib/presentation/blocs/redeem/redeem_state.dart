@@ -48,12 +48,17 @@ class RedeemLoaded extends RedeemState {
   );
 }
 class RedeemStartLoaded extends RedeemState {
+  final String? message;
+  final bool isPending;
+
   const RedeemStartLoaded({
     ProgramUiConfig? config,
     LookupCard? customer,
+    this.message,
+    this.isPending = false,
   }) : super(
     config: config,
-    
+
   );
 }
 

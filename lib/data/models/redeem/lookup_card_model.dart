@@ -67,6 +67,7 @@ class LookupCardModel extends LookupCard {
     super.currency,
     super.earnCount = 0,
     super.spendCount = 0,
+    super.requireReceiptOcr = false,
   });
 
   factory LookupCardModel.fromJson(Map<String, dynamic> json) {
@@ -74,7 +75,7 @@ class LookupCardModel extends LookupCard {
       success: json['success'] as bool? ?? false,
       customerFullName: json['customerFullName'] as String? ?? '',
       cardNumber: json['cardNumber'] as String? ?? '',
-      currentPoints: (json['currentPoints'] as num?)?.toInt() ?? 0,
+      currentPoints: (json['currentPoints'] as num?)?.toDouble() ?? 0.0,
       tierIconUrl: json['tierIconUrl'] as String? ?? '',
       tierName: json['tierName'] as String? ?? '',
       tierPercent: (json['tierPercent'] as num?)?.toInt() ?? 0,
@@ -86,6 +87,7 @@ class LookupCardModel extends LookupCard {
       currency: json['currency'] as String?,
       earnCount: (json['earnCount'] as num?)?.toInt() ?? 0,
       spendCount: (json['spendCount'] as num?)?.toInt() ?? 0,
+      requireReceiptOcr: json['requireReceiptOcr'] as bool? ?? false,
     );
   }
 
@@ -103,6 +105,7 @@ class LookupCardModel extends LookupCard {
         'maxSpendCount': maxSpendCount,
         'freeRewardLabel': freeRewardLabel,
         'currency': currency,
+        'requireReceiptOcr': requireReceiptOcr,
       };
 
   factory LookupCardModel.fromEntity(LookupCard entity) => LookupCardModel(
@@ -119,5 +122,6 @@ class LookupCardModel extends LookupCard {
         maxSpendCount: entity.maxSpendCount,
         freeRewardLabel: entity.freeRewardLabel,
         currency: entity.currency,
+        requireReceiptOcr: entity.requireReceiptOcr,
       );
 }

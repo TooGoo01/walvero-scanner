@@ -6,9 +6,9 @@ class ConfirmOtpResponse extends Equatable {
   final String? message;
 
   final int? loyaltyCardId;
-  final int? appliedDelta;
-  final int? oldPoints;
-  final int? newPoints;
+  final double? appliedDelta;
+  final double? oldPoints;
+  final double? newPoints;
   final bool? isPending;
 
   const ConfirmOtpResponse({

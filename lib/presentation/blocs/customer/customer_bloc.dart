@@ -71,10 +71,15 @@ class CustomerBloc extends Bloc<CustomerEvent, CustomerState> {
         ),
       );
       result.fold(
-        (failure) => emit(ReverseError(failure)),
+        (failure) {
+          debugPrint('[REVERSE] failure: $failure');
+          emit(ReverseError(failure));
+        },
         (reverseResult) => emit(ReverseSuccess(reverseResult)),
       );
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('[REVERSE] exception: $e');
+      debugPrint('[REVERSE] stack: $stack');
       emit(ReverseError(ExceptionFailure()));
     }
   }

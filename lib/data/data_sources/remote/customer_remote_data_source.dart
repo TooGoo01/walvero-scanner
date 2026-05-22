@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:http/http.dart' as http;
 
 import '../../../core/constant/strings.dart';
@@ -80,7 +81,9 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
       'timestamp': DateTime.now().toUtc().toIso8601String(),
     });
 
+    debugPrint('[REVERSE] POST $uri body=$body');
     final response = await client.post(uri, headers: _headers(token), body: body).timeout(const Duration(seconds: 15));
+    debugPrint('[REVERSE] status=${response.statusCode} body=${response.body}');
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body) as Map<String, dynamic>;
@@ -106,7 +109,9 @@ class CustomerRemoteDataSourceImpl implements CustomerRemoteDataSource {
       'reason': reason,
     });
 
+    debugPrint('[REVERSE-LAST] POST $uri body=$body');
     final response = await client.post(uri, headers: _headers(token), body: body).timeout(const Duration(seconds: 15));
+    debugPrint('[REVERSE-LAST] status=${response.statusCode} body=${response.body}');
 
     if (response.statusCode == 200) {
       final decoded = json.decode(response.body) as Map<String, dynamic>;

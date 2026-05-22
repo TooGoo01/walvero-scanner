@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 // dart:math removed (confetti removed)
 
 import 'package:cached_network_image/cached_network_image.dart';
@@ -7,9 +8,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../../../core/constant/colors.dart';
 import '../../../../core/constant/images.dart';
+import '../../../../core/error/failures.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../core/services/services_locator.dart';
 import '../../../../data/data_sources/local/user_local_data_source.dart';
@@ -58,6 +61,9 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   bool _isSubmitting = false;
   Timer? _lookupDebounceTimer;
   int? _selectedProgramId;
+
+  // Çek OCR: branch və ya tenant requireReceiptOcr=true olduqda pay rejimi üçün məcburi.
+  File? _receiptImage;
 
   // Animasiya controllers
   // confetti removed
@@ -148,6 +154,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     _orderIdController.clear();
     _spendCountController.text = '1';
     _redeemType = RedeemType.points;
+    _receiptImage = null;
     context.read<RedeemBloc>().add(const RedeemCustomerCleared());
   }
 
@@ -318,17 +325,25 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     );
   }
 
-  void _adjustDeltaForMode({int? maxBalance}) {
-    int current = int.tryParse(_deltaController.text.trim()) ?? 0;
+  void _adjustDeltaForMode({double? maxBalance}) {
+    final raw = _deltaController.text.trim().replaceAll(',', '.');
+    double current = double.tryParse(raw) ?? 0.0;
     if (_mode == RedeemMode.earn) {
-      _deltaController.text = current.abs().toString();
+      _deltaController.text = _formatDelta(current.abs());
     } else {
-      int val = -current.abs();
+      double val = -current.abs();
+      // Pay mode-da xərcləmə balansdan çox olmamalıdır (kəsri də nəzərə al)
       if (maxBalance != null && maxBalance > 0 && (-val) > maxBalance) {
         val = -maxBalance;
       }
-      _deltaController.text = val.toString();
+      _deltaController.text = _formatDelta(val);
     }
+  }
+
+  // Tam ədəd üçün "25", kəsr üçün "1.25" formatla
+  String _formatDelta(double v) {
+    if (v == v.truncateToDouble()) return v.toInt().toString();
+    return v.toString();
   }
 
   Future<void> _onApplyPressed() async {
@@ -349,7 +364,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
     final isProgressBased = customer?.isProgressBased ?? false;
 
     int? spendCount;
-    int delta = 0;
+    double delta = 0.0;
 
     if (isProgressBased && _redeemType == RedeemType.freeReward) {
       spendCount = int.tryParse(_spendCountController.text.trim()) ?? 1;
@@ -375,9 +390,9 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 Text('Movcud mukafat ${customer.completedCycles}')));
         return;
       }
-      delta = 0;
+      delta = 0.0;
     } else {
-      delta = int.tryParse(_deltaController.text.trim()) ?? 0;
+      delta = double.tryParse(_deltaController.text.trim().replaceAll(',', '.')) ?? 0.0;
       if (_mode == RedeemMode.earn) {
         if (delta <= 0) delta = delta.abs();
       } else {
@@ -385,7 +400,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         if (balance > 0 && (-delta) > balance) {
           setState(() => _isSubmitting = false);
           ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Maksimum $balance')));
+              SnackBar(content: Text('Maksimum ${balance.toStringAsFixed(2)}')));
           return;
         }
       }
@@ -396,6 +411,19 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         ? (_paymentMethod == PaymentMethod.cash ? 'cash' : 'card')
         : 'balance';
 
+    // Receipt OCR — branch/tenant requireReceiptOcr=true olduqda earn + pay üçün məcburi.
+    // İstifadəçi əvvəlcə _buildReceiptCaptureCard vasitəsilə şəkili çəkir; burada təsdiq edirik.
+    final needReceipt = (customer?.requireReceiptOcr ?? false) &&
+        !(isProgressBased && _redeemType == RedeemType.freeReward);
+    if (needReceipt && _receiptImage == null) {
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Əvvəlcə çekin şəklini çəkin.')),
+      );
+      return;
+    }
+    final File? receiptImage = needReceipt ? _receiptImage : null;
+
     final params = StartRedeemParams(
       code: code,
       delta: delta,
@@ -403,9 +431,38 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       operationType: _mode == RedeemMode.earn ? 'earn' : 'pay',
       paymentMethod: paymentMethodStr,
       spendCount: spendCount,
+      receiptImage: receiptImage,
     );
 
+    if (!mounted) return;
     context.read<RedeemBloc>().add(RedeemStartRequested(params));
+  }
+
+  Future<File?> _captureReceipt() async {
+    final picker = ImagePicker();
+    try {
+      final picked = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+        maxWidth: 1600,
+      );
+      if (picked == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Çekin şəklini çəkmək tələb olunur.')),
+          );
+        }
+        return null;
+      }
+      return File(picked.path);
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Kamera xətası: $e')),
+        );
+      }
+      return null;
+    }
   }
 
   Future<void> _onScanPressed() async {
@@ -418,6 +475,23 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   }
 
   // ─── Helpers ───
+
+  // Backend roles array sırası deyişkəndir; UI-da admin user-ə "Customer" göstərməmək üçün
+  // prioritetlə staff rolunu seçirik.
+  String _primaryStaffRole(List<String> roles) {
+    const priority = [
+      'Super Admin',
+      'Tenant Admin',
+      'Branch Admin',
+      'Branch Moderator',
+      'Moderator',
+      'Sales Manager',
+    ];
+    for (final r in priority) {
+      if (roles.contains(r)) return r;
+    }
+    return roles.firstWhere((r) => r != 'Customer', orElse: () => roles.first);
+  }
 
   BoxDecoration get _cardDecoration => BoxDecoration(
         color: Colors.white,
@@ -495,16 +569,30 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                 }
                 if (state is RedeemStartLoaded && state.failure == null) {
                   setState(() => _isSubmitting = false);
-                  _showSuccessAnimation();
-                  _clearAll();
+                  if (state.isPending) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text(state.message ?? 'Çek yoxlama prosesindədir...'),
+                        backgroundColor: Colors.blue.shade700,
+                        duration: const Duration(seconds: 3),
+                      ),
+                    );
+                    _clearAll();
+                  } else {
+                    _showSuccessAnimation();
+                    _clearAll();
+                  }
                 }
                 if (state is RedeemError && state.failure != null) {
                   if (_isSubmitting) {
                     setState(() => _isSubmitting = false);
                   }
+                  final Failure f = state.failure!;
+                  final String? serverMsg =
+                      f is ServerFailure ? f.message : null;
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
-                      content: Text(l.error),
+                      content: Text(serverMsg ?? l.error),
                       backgroundColor: kErrorColor,
                     ),
                   );
@@ -678,10 +766,19 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
                   ),
                   if (isLogged && user!.roles.isNotEmpty)
                     Text(
-                      user.roles.first,
+                      _primaryStaffRole(user.roles),
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
+                      ),
+                    ),
+                  if (isLogged && (user!.branchName != null || user.branchId != null))
+                    Text(
+                      '🏢 ${user.branchName ?? "Branch #${user.branchId}"}',
+                      style: TextStyle(
+                        fontSize: 11,
+                        color: Colors.teal.shade700,
+                        fontWeight: FontWeight.w500,
                       ),
                     ),
                 ],
@@ -1027,6 +1124,12 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
           ),
         ),
         const SizedBox(height: 14),
+
+        // ── Receipt OCR (earn + pay hər iki rejimi — branch/tenant requireReceiptOcr=true olduqda) ──
+        if (customer != null &&
+            (customer.requireReceiptOcr) &&
+            !(customer.isProgressBased && _redeemType == RedeemType.freeReward))
+          _buildReceiptCaptureCard(),
 
         // ── Apply Button ──
         _buildApplyButton(),
@@ -1397,15 +1500,116 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         const SizedBox(height: 8),
         TextField(
           controller: _deltaController,
-          keyboardType: TextInputType.number,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
           style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
           inputFormatters: [
-            FilteringTextInputFormatter.allow(RegExp(r'-?\d*')),
+            // Kəsr ədəd qəbul edir: 25, 25.5, 1.24, -1.24
+            FilteringTextInputFormatter.allow(RegExp(r'^-?\d*\.?\d*$')),
           ],
           decoration: _inputDecoration(),
         ),
       ],
     );
+  }
+
+  Widget _buildReceiptCaptureCard() {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _receiptImage == null
+              ? Colors.orange.shade300
+              : Colors.green.shade400,
+          width: 1.5,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Icon(
+                _receiptImage == null
+                    ? Icons.receipt_long
+                    : Icons.check_circle,
+                size: 20,
+                color: _receiptImage == null
+                    ? Colors.orange.shade700
+                    : Colors.green.shade700,
+              ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Çekin şəkli (məcburi)',
+                  style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            _receiptImage == null
+                ? 'OCR doğrulaması üçün çekin şəklini çəkin.'
+                : 'Şəkil əlavə edildi.',
+            style: TextStyle(fontSize: 12, color: Colors.grey.shade700),
+          ),
+          const SizedBox(height: 10),
+          if (_receiptImage != null)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.file(
+                _receiptImage!,
+                height: 120,
+                width: double.infinity,
+                fit: BoxFit.cover,
+              ),
+            ),
+          if (_receiptImage != null) const SizedBox(height: 10),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _isSubmitting ? null : _onTakeReceiptPressed,
+                  icon: const Icon(Icons.camera_alt, size: 18),
+                  label: Text(_receiptImage == null
+                      ? 'Çek şəklini çək'
+                      : 'Yenidən çək'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                ),
+              ),
+              if (_receiptImage != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  onPressed: _isSubmitting
+                      ? null
+                      : () => setState(() => _receiptImage = null),
+                  icon: const Icon(Icons.delete_outline),
+                  color: Colors.red.shade600,
+                  tooltip: 'Sil',
+                ),
+              ],
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _onTakeReceiptPressed() async {
+    final file = await _captureReceipt();
+    if (file != null && mounted) {
+      setState(() => _receiptImage = file);
+    }
   }
 
   Widget _buildApplyButton() {
@@ -1546,7 +1750,7 @@ class _CustomerInfoCard extends StatelessWidget {
                         Icons.account_balance_wallet_outlined,
                         const Color(0xFFf59e0b),
                         'Balans',
-                        '${customer.currentPoints} ${customer.currency ?? 'AZN'}',
+                        '${customer.currentPoints.toStringAsFixed(2)} ${customer.currency ?? 'AZN'}',
                       ),
 
                     // Progress reward

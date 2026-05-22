@@ -47,6 +47,8 @@ class User extends Equatable {
   final String? phone;
   final int? tenantId;
   final int? programId;
+  final int? branchId;
+  final String? branchName;
   final List<String> roles;
   final String? image;
   final String? googleLogoUrl;
@@ -66,6 +68,8 @@ class User extends Equatable {
     this.phone,
     this.tenantId,
     this.programId,
+    this.branchId,
+    this.branchName,
     this.roles = const [],
     this.image,
     this.googleLogoUrl,
@@ -77,6 +81,8 @@ class User extends Equatable {
   });
 
   bool get isTenantAdmin => roles.contains('Tenant Admin');
+  bool get isBranchAdmin => roles.contains('Branch Admin');
+  bool get isModerator => roles.contains('Moderator');
   bool get hasMultiplePrograms => programs.length > 1;
 
   @override
@@ -90,6 +96,8 @@ class User extends Equatable {
         phone,
         tenantId,
         programId,
+        branchId,
+        branchName,
         roles,
         image,
         googleLogoUrl,

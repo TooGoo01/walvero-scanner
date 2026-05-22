@@ -9,9 +9,9 @@ class StartRedeemResponseModel extends StartRedeemResponse {
     String? message,
     bool requiresOtp = false,
     int? loyaltyCardId,
-    int? appliedDelta,
-    int? oldPoints,
-    int? newPoints,
+    double? appliedDelta,
+    double? oldPoints,
+    double? newPoints,
     bool? isPending,
     int? redeemRequestId,
     int? remainingRewardCount,
@@ -39,11 +39,11 @@ class StartRedeemResponseModel extends StartRedeemResponse {
       message: json['message'] as String?,
       requiresOtp: json['requiresOtp'] as bool? ?? false,
       loyaltyCardId: (json['loyaltyCardId'] as num?)?.toInt(),
-      appliedDelta: data != null 
-          ? (data['appliedDelta'] as num?)?.toInt() 
-          : (json['appliedDelta'] as num?)?.toInt(),
-      oldPoints: (json['oldPoints'] as num?)?.toInt(),
-      newPoints: (json['newPoints'] as num?)?.toInt(),
+      appliedDelta: data != null
+          ? (data['appliedDelta'] as num?)?.toDouble()
+          : (json['appliedDelta'] as num?)?.toDouble(),
+      oldPoints: (json['oldPoints'] as num?)?.toDouble(),
+      newPoints: (json['newPoints'] as num?)?.toDouble(),
       isPending: json['isPending'] as bool?,
       redeemRequestId: (json['redeemRequestId'] as num?)?.toInt(),
       remainingRewardCount: data != null 

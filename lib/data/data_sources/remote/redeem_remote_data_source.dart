@@ -1,6 +1,8 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
 import '../../../../core/error/exceptions.dart';
 import '../../../core/constant/strings.dart';
 import '../../../domain/entities/redeem/confirm_otp_response.dart';
@@ -81,6 +83,12 @@ class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
       headers: _buildHeaders(token, programId: programId),
     );
     if (response.statusCode == 200) {
+      // DEBUG: backend-dən hansı dəyər gəlir görmək üçün requireReceiptOcr-ı çap edirik
+      try {
+        final raw = json.decode(response.body) as Map<String, dynamic>;
+        debugPrint('[LOOKUP] requireReceiptOcr=${raw['requireReceiptOcr']} '
+            'success=${raw['success']} cardNumber=${raw['cardNumber']}');
+      } catch (_) {}
       return lookupCardModelFromJson(response.body);
     } else if (response.statusCode == 401) {
       throw UnauthorizedException();
@@ -95,31 +103,96 @@ class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
     token, {
     int? programId,
   }) async {
-    final uri = Uri.parse('$baseUrl/api/redeem/start');
+    final hasImage = params.receiptImage != null;
+    // Backend [FromBody] JSON action = /api/redeem/start, [FromForm] multipart = /api/redeem/startwithreceipt
+    final uri = Uri.parse(hasImage
+        ? '$baseUrl/api/redeem/startwithreceipt'
+        : '$baseUrl/api/redeem/start');
 
-    final body = {
-      'code': params.code,
-      'delta': params.delta,
-      'orderId': params.orderId,
-      'mode': params.operationType,
-      'paymentMethod': params.paymentMethod,
-      'spendCount': params.spendCount,
-    };
+    late http.Response response;
 
-    final response = await client.post(
-      uri,
-      headers: _buildHeaders(token, programId: programId, isPost: true),
-      body: json.encode(body),
-    );
+    if (hasImage) {
+      // multipart upload — backend RedeemController.StartWithReceipt
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+      if (programId != null) {
+        request.headers['X-Program-Id'] = programId.toString();
+      }
+
+      request.fields['code'] = params.code;
+      request.fields['delta'] = params.delta.toString();
+      request.fields['orderId'] = params.orderId;
+      request.fields['mode'] = params.operationType;
+      request.fields['paymentMethod'] = params.paymentMethod;
+      if (params.spendCount != null) {
+        request.fields['spendCount'] = params.spendCount.toString();
+      }
+
+      final file = params.receiptImage!;
+      final mimeType = _guessImageMime(file.path);
+      request.files.add(await http.MultipartFile.fromPath(
+        'receiptImage',
+        file.path,
+        contentType: MediaType.parse(mimeType),
+      ));
+
+      final streamed = await client.send(request);
+      response = await http.Response.fromStream(streamed);
+    } else {
+      final body = {
+        'code': params.code,
+        'delta': params.delta,
+        'orderId': params.orderId,
+        'mode': params.operationType,
+        'paymentMethod': params.paymentMethod,
+        'spendCount': params.spendCount,
+      };
+
+      response = await client.post(
+        uri,
+        headers: _buildHeaders(token, programId: programId, isPost: true),
+        body: json.encode(body),
+      );
+    }
+
+    debugPrint('[REDEEM] POST $uri status=${response.statusCode} bodyLen=${response.body.length}');
+    if (response.statusCode != 200) {
+      debugPrint('[REDEEM] body: ${response.body}');
+    }
 
     if (response.statusCode == 200) {
       final jsonMap = json.decode(response.body) as Map<String, dynamic>;
       return StartRedeemResponseModel.fromJson(jsonMap);
     } else if (response.statusCode == 401) {
       throw UnauthorizedException();
+    } else if (response.statusCode == 400) {
+      // Backend OCR mismatch / receipt validation failure — message-i propagate et
+      String? serverMsg;
+      try {
+        final body = json.decode(response.body);
+        if (body is Map && body['message'] is String) {
+          serverMsg = body['message'] as String;
+        }
+      } catch (_) {}
+      throw ServerException(message: serverMsg);
     } else {
-      throw ServerException();
+      // 415, 500, etc — body-də message varsa propagate et
+      String? serverMsg;
+      try {
+        final body = json.decode(response.body);
+        if (body is Map && body['message'] is String) {
+          serverMsg = body['message'] as String;
+        }
+      } catch (_) {}
+      throw ServerException(message: serverMsg ?? 'HTTP ${response.statusCode}');
     }
+  }
+
+  static String _guessImageMime(String path) {
+    final lower = path.toLowerCase();
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    return 'image/jpeg';
   }
 
   @override

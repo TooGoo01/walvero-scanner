@@ -48,6 +48,8 @@ class AppRouter {
             allowedRoles: const [
               'Super Admin',
               'Tenant Admin',
+              'Branch Admin',
+              'Branch Moderator',
               'Moderator',
             ],
             child: const MainView(),
@@ -76,14 +78,14 @@ class AppRouter {
       case statistics:
         return MaterialPageRoute(
           builder: (_) => RoleGuard(
-            allowedRoles: const ['Tenant Admin'],
+            allowedRoles: const ['Tenant Admin', 'Branch Admin'],
             child: const StatisticsView(),
           ),
         );
       case customers:
         return MaterialPageRoute(
           builder: (_) => RoleGuard(
-            allowedRoles: const ['Tenant Admin'],
+            allowedRoles: const ['Tenant Admin', 'Branch Admin'],
             child: const CustomerListView(),
           ),
         );

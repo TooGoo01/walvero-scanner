@@ -155,9 +155,13 @@ class RedeemRepositoryImpl implements RedeemRepository {
       try {
         final result = await remoteDataSource.startRedeem(params, newToken, programId: programId);
         return Right(result);
+      } on ServerException catch (e) {
+        return Left(ServerFailure(message: e.message));
       } catch (_) {
         return Left(AuthenticationFailure());
       }
+    } on ServerException catch (e) {
+      return Left(ServerFailure(message: e.message));
     } catch (e) {
       return Left(ServerFailure());
     }

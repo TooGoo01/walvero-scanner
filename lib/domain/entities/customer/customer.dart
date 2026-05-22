@@ -35,8 +35,8 @@ class LoyaltyCardInfo extends Equatable {
   final int id;
   final int customerId;
   final String cardNumber;
-  final int currentPoints;
-  final int lifetimePoints;
+  final double currentPoints;
+  final double lifetimePoints;
   final int currentSteps;
   final int completedCycles;
   final int availableRewardCount;
@@ -47,8 +47,8 @@ class LoyaltyCardInfo extends Equatable {
     required this.id,
     required this.customerId,
     required this.cardNumber,
-    this.currentPoints = 0,
-    this.lifetimePoints = 0,
+    this.currentPoints = 0.0,
+    this.lifetimePoints = 0.0,
     this.currentSteps = 0,
     this.completedCycles = 0,
     this.availableRewardCount = 0,

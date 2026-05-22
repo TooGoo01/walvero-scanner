@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:http/http.dart' as http;
+import 'package:oktoast/oktoast.dart';
 import 'package:walveroScanner/core/constant/validators.dart';
 
 import '../../../core/constant/images.dart';
@@ -32,6 +33,7 @@ class _SignInViewState extends State<SignInView> {
   final _formKey = GlobalKey<FormState>();
 
   bool _isPhoneMode = false;
+  bool _isLoading = false; // local overlay state — EasyLoading race-from-bloc bypass
   List<CountryCode> _countryCodes = [];
   CountryCode? _selectedCountry;
 
@@ -66,12 +68,14 @@ class _SignInViewState extends State<SignInView> {
     return BlocListener<UserBloc, UserState>(
       listener: (context, state) async {
         final l = AppLocalizations.of(context)!;
+        // EasyLoading.show/dismiss race-ini bypass etmək üçün local _isLoading istifadə edirik.
+        // Dismiss üçün əlavə olaraq EasyLoading.dismiss-i də çağırırıq (mövcud sessiya
+        // kontekstində yan tərəfdən show çağırılıbsa təmizləmək üçün).
         if (state is UserLoading) {
-          EasyLoading.show(status: l.loading);
+          if (mounted) setState(() => _isLoading = true);
         } else if (state is UserLogged) {
+          if (mounted) setState(() => _isLoading = false);
           await EasyLoading.dismiss(animation: false);
-          // Dismiss-in tamamlanması üçün gözlə
-          await Future.delayed(const Duration(milliseconds: 100));
           if (context.mounted) {
             context.read<NavbarCubit>().update(0);
             Navigator.of(context).pushNamedAndRemoveUntil(
@@ -80,20 +84,50 @@ class _SignInViewState extends State<SignInView> {
             );
           }
         } else if (state is UserLoggedFail) {
+          if (mounted) setState(() => _isLoading = false);
           await EasyLoading.dismiss(animation: false);
-          if (state.failure is CredentialFailure) {
-            EasyLoading.showError(l.invalidCredentials);
-          } else if (state.failure is NetworkFailure) {
-            EasyLoading.showError(l.noInternet);
-          } else {
-            EasyLoading.showError(l.error);
-          }
+
+          final msg = state.failure is CredentialFailure
+              ? l.invalidCredentials
+              : state.failure is NetworkFailure
+                  ? l.noInternet
+                  : l.error;
+          showToast(
+            msg,
+            position: ToastPosition.bottom,
+            duration: const Duration(seconds: 3),
+            backgroundColor: Colors.red.shade700,
+            textStyle: const TextStyle(color: Colors.white, fontSize: 14),
+          );
         } else {
-          // Hər hansı gözlənilməz state-də loading-i bağla
-          EasyLoading.dismiss(animation: false);
+          if (mounted) setState(() => _isLoading = false);
+          await EasyLoading.dismiss(animation: false);
         }
       },
-      child: Scaffold(
+      child: Stack(
+        children: [
+          _buildContent(l),
+          if (_isLoading)
+            const Positioned.fill(
+              child: IgnorePointer(
+                ignoring: false,
+                child: ColoredBox(
+                  color: Color(0x66000000),
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildContent(AppLocalizations l) {
+    return Scaffold(
         backgroundColor: const Color(0xFFF5F7FA),
         body: SafeArea(
           child: LayoutBuilder(
@@ -303,7 +337,6 @@ class _SignInViewState extends State<SignInView> {
             },
           ),
         ),
-      ),
     );
   }
 
@@ -312,7 +345,10 @@ class _SignInViewState extends State<SignInView> {
       final String username;
       if (_isPhoneMode) {
         if (_selectedCountry == null) return;
-        username = '${_selectedCountry!.countryCode}${_phoneController.text.trim()}';
+        // Backend ApplicationUser.PhoneNumber E.164 ilə saxlanır ('+994...')
+        var phone = _phoneController.text.trim();
+        if (phone.startsWith('0')) phone = phone.substring(1);
+        username = '+${_selectedCountry!.countryCode}$phone';
       } else {
         username = emailController.text;
       }

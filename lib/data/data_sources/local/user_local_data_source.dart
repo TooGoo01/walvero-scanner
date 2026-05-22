@@ -19,6 +19,9 @@ abstract class UserLocalDataSource {
   Future<void> saveSelectedProgramId(int programId);
   Future<int?> getSelectedProgramId();
 
+  /// Operator branch-id-i cached UserModel-dən qaytarır (login response-dan gəlir).
+  Future<int?> getBranchId();
+
   // Multi-account
   Future<List<SavedAccount>> getSavedAccounts();
   Future<void> saveCurrentAccountToList();
@@ -113,6 +116,17 @@ class UserLocalDataSourceImpl implements UserLocalDataSource {
   @override
   Future<int?> getSelectedProgramId() async {
     return sharedPreferences.getInt('SELECTED_PROGRAM_ID');
+  }
+
+  @override
+  Future<int?> getBranchId() async {
+    final jsonString = sharedPreferences.getString(cachedUser);
+    if (jsonString == null) return null;
+    try {
+      return userModelFromJson(jsonString).branchId;
+    } catch (_) {
+      return null;
+    }
   }
 
   @override

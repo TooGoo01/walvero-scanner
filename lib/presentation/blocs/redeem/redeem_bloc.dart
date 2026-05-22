@@ -138,6 +138,8 @@ class RedeemBloc extends Bloc<RedeemEvent, RedeemState> {
             emit(RedeemStartLoaded(
               config: state.config,
               customer: state.customer,
+              message: response.message,
+              isPending: response.isPending ?? false,
             ));
           }
         },

@@ -18,6 +18,8 @@ class UserModel extends User {
     super.phone,
     super.tenantId,
     super.programId,
+    super.branchId,
+    super.branchName,
     super.roles = const [],
     super.image,
     super.googleLogoUrl,
@@ -62,6 +64,10 @@ class UserModel extends User {
         programId: json['programId'] == null
             ? null
             : int.tryParse(json['programId'].toString()),
+        branchId: json['branchId'] == null
+            ? null
+            : int.tryParse(json['branchId'].toString()),
+        branchName: json['branchName'] as String?,
         roles: (json['roles'] as List<dynamic>?)
                 ?.map((e) => e.toString())
                 .toList() ??
@@ -96,6 +102,8 @@ class UserModel extends User {
         'phone': phone,
         'tenantId': tenantId,
         'programId': programId,
+        'branchId': branchId,
+        'branchName': branchName,
         'roles': roles,
         'image': image,
         'googleLogoUrl': googleLogoUrl,

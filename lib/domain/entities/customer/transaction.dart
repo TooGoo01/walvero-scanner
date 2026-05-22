@@ -5,14 +5,14 @@ class Transaction extends Equatable {
   final int loyaltyCardId;
   final int type; // 1=Earned, 2=Redeemed, 3=Expired, 4=Adjusted, 5=Bonus
   final int status; // 0=Pending, 1=Applied, 2=Rejected, 3=Expired, 4=Reversed
-  final int points;
+  final double points;
   final double? amount;
   final String? description;
   final String? reverseReason;
   final String? referenceNumber;
   final String? orderId;
   final String? localOccurredAt;
-  final int balanceAfter;
+  final double balanceAfter;
   final String? customerName;
   final String? cardNumber;
   final String? createdAt;
@@ -29,7 +29,7 @@ class Transaction extends Equatable {
     this.referenceNumber,
     this.orderId,
     this.localOccurredAt,
-    this.balanceAfter = 0,
+    this.balanceAfter = 0.0,
     this.customerName,
     this.cardNumber,
     this.createdAt,
@@ -68,8 +68,8 @@ class Transaction extends Equatable {
 class ReverseResult extends Equatable {
   final String status;
   final double? reversedAmount;
-  final int reversedPoints;
-  final int updatedBalance;
+  final double reversedPoints;
+  final double updatedBalance;
 
   const ReverseResult({
     required this.status,

@@ -14,14 +14,14 @@ class StartRedeemResponse extends Equatable {
   /// Kartın Id-si (serverdən gəlirsə).
   final int? loyaltyCardId;
 
-  /// Tətbiq olunan delta (xal dəyişikliyi).
-  final int? appliedDelta;
+  /// Tətbiq olunan delta (xal dəyişikliyi) — kəsr saxlanır.
+  final double? appliedDelta;
 
-  /// Əməliyyatdan əvvəlki balans.
-  final int? oldPoints;
+  /// Əməliyyatdan əvvəlki balans — kəsr saxlanır.
+  final double? oldPoints;
 
-  /// Əməliyyatdan sonrakı balans.
-  final int? newPoints;
+  /// Əməliyyatdan sonrakı balans — kəsr saxlanır.
+  final double? newPoints;
 
   /// Əməliyyat pending statusdadırmı? (OTP gözlənir və s.)
   final bool? isPending;

@@ -41,7 +41,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text(
-                    '${l.transactionReversed}. ${state.result.reversedPoints} ${l.pointsReversed}.',
+                    '${l.transactionReversed}. ${state.result.reversedPoints.toStringAsFixed(2)} ${l.pointsReversed}.',
                   ),
                   backgroundColor: const Color(0xFF388E3C),
                 ),
@@ -195,7 +195,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
             const SizedBox(height: 16),
             Row(
               children: [
-                _cardStat('Cari xal', card.currentPoints.toString()),
+                _cardStat('Cari xal', card.currentPoints.toStringAsFixed(2)),
                 _cardStat('Mükafat', card.availableRewardCount.toString()),
                 _cardStat('Tamamlanan', card.completedCycles.toString()),
               ],
@@ -407,7 +407,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
                   Text(
-                    '$prefix${transaction.points}',
+                    '$prefix${transaction.points.toStringAsFixed(2)}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -517,7 +517,7 @@ class _CustomerDetailViewState extends State<CustomerDetailView> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '${transaction.typeName} - ${transaction.points} ${l.points}',
+                '${transaction.typeName} - ${transaction.points.toStringAsFixed(2)} ${l.points}',
                 style: const TextStyle(fontWeight: FontWeight.w500),
               ),
               const SizedBox(height: 16),

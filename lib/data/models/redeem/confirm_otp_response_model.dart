@@ -8,9 +8,9 @@ class ConfirmOtpResponseModel extends ConfirmOtpResponse {
     required bool success,
     String? message,
     int? loyaltyCardId,
-    int? appliedDelta,
-    int? oldPoints,
-    int? newPoints,
+    double? appliedDelta,
+    double? oldPoints,
+    double? newPoints,
     bool? isPending,
   }) : super(
           success: success,
@@ -27,9 +27,9 @@ class ConfirmOtpResponseModel extends ConfirmOtpResponse {
       success: json['success'] as bool? ?? false,
       message: json['message'] as String?,
       loyaltyCardId: (json['loyaltyCardId'] as num?)?.toInt(),
-      appliedDelta: (json['appliedDelta'] as num?)?.toInt(),
-      oldPoints: (json['oldPoints'] as num?)?.toInt(),
-      newPoints: (json['newPoints'] as num?)?.toInt(),
+      appliedDelta: (json['appliedDelta'] as num?)?.toDouble(),
+      oldPoints: (json['oldPoints'] as num?)?.toDouble(),
+      newPoints: (json['newPoints'] as num?)?.toDouble(),
       isPending: json['isPending'] as bool?,
     );
   }

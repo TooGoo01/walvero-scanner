@@ -27,14 +27,14 @@ class TransactionModel extends Transaction {
       loyaltyCardId: json['loyaltyCardId'] as int? ?? 0,
       type: json['type'] as int? ?? 0,
       status: json['status'] as int? ?? 0,
-      points: json['points'] as int? ?? 0,
+      points: (json['points'] as num?)?.toDouble() ?? 0.0,
       amount: (json['amount'] as num?)?.toDouble(),
       description: json['description'] as String?,
       reverseReason: json['reverseReason'] as String?,
       referenceNumber: json['referenceNumber'] as String?,
       orderId: json['orderId'] as String?,
       localOccurredAt: json['localOccurredAt'] as String?,
-      balanceAfter: json['balanceAfter'] as int? ?? 0,
+      balanceAfter: (json['balanceAfter'] as num?)?.toDouble() ?? 0.0,
       customerName: json['customerName'] as String?,
       cardNumber: json['cardNumber'] as String?,
       createdAt: json['createdAt'] as String?,
@@ -54,8 +54,8 @@ class ReverseResultModel extends ReverseResult {
     return ReverseResultModel(
       status: json['status'] as String? ?? '',
       reversedAmount: (json['reversedAmount'] as num?)?.toDouble(),
-      reversedPoints: json['reversedPoints'] as int? ?? 0,
-      updatedBalance: json['updatedBalance'] as int? ?? 0,
+      reversedPoints: (json['reversedPoints'] as num?)?.toDouble() ?? 0.0,
+      updatedBalance: (json['updatedBalance'] as num?)?.toDouble() ?? 0.0,
     );
   }
 }

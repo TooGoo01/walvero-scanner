@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dartz/dartz.dart';
 import 'package:equatable/equatable.dart' show Equatable;
 
@@ -21,12 +23,13 @@ class StartRedeemUseCase
 }
 class StartRedeemParams {
   final String code;
-  final int delta;
+  final double delta;
   final String orderId;
 
   final String operationType; // 'earn' / 'pay'
   final String paymentMethod; // 'cash' / 'card'
   final int? spendCount; // YENİ: Free reward xərcləmə sayı (ProgressBased üçün)
+  final File? receiptImage; // Receipt OCR — tenant requireReceiptOcr=true olduqda
 
   StartRedeemParams({
     required this.code,
@@ -35,6 +38,7 @@ class StartRedeemParams {
     required this.operationType,
     required this.paymentMethod,
     this.spendCount, // Null olarsa, points-based redeem
+    this.receiptImage,
   });
 
   Map<String, dynamic> toJson() => {
