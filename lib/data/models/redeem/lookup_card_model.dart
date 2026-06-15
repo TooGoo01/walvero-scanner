@@ -68,6 +68,8 @@ class LookupCardModel extends LookupCard {
     super.earnCount = 0,
     super.spendCount = 0,
     super.requireReceiptOcr = false,
+    super.requireQrVerification = false,
+    super.ekassaUrlTemplate,
   });
 
   factory LookupCardModel.fromJson(Map<String, dynamic> json) {
@@ -88,6 +90,8 @@ class LookupCardModel extends LookupCard {
       earnCount: (json['earnCount'] as num?)?.toInt() ?? 0,
       spendCount: (json['spendCount'] as num?)?.toInt() ?? 0,
       requireReceiptOcr: json['requireReceiptOcr'] as bool? ?? false,
+      requireQrVerification: json['requireQrVerification'] as bool? ?? false,
+      ekassaUrlTemplate: json['ekassaUrlTemplate'] as String?,
     );
   }
 
@@ -106,6 +110,8 @@ class LookupCardModel extends LookupCard {
         'freeRewardLabel': freeRewardLabel,
         'currency': currency,
         'requireReceiptOcr': requireReceiptOcr,
+        'requireQrVerification': requireQrVerification,
+        'ekassaUrlTemplate': ekassaUrlTemplate,
       };
 
   factory LookupCardModel.fromEntity(LookupCard entity) => LookupCardModel(
@@ -123,5 +129,7 @@ class LookupCardModel extends LookupCard {
         freeRewardLabel: entity.freeRewardLabel,
         currency: entity.currency,
         requireReceiptOcr: entity.requireReceiptOcr,
+        requireQrVerification: entity.requireQrVerification,
+        ekassaUrlTemplate: entity.ekassaUrlTemplate,
       );
 }

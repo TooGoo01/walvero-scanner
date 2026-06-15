@@ -31,14 +31,24 @@ class StartRedeemParams {
   final int? spendCount; // YENİ: Free reward xərcləmə sayı (ProgressBased üçün)
   final File? receiptImage; // Receipt OCR — tenant requireReceiptOcr=true olduqda
 
+  // QR — scanner Flutter app çekin QR kodu oxuyub doc-id-ni göndərir (opsional)
+  final String? qrDocId;
+  // E-kassa SPA WebView capture JSON (opsional, legacy — istifadə olunmur)
+  final String? qrVerifiedJson;
+  // Flutter cihazından AZ ISP-də fetch edilmiş e-kassa JPEG (opsional)
+  final File? ekassaImage;
+
   StartRedeemParams({
     required this.code,
     required this.delta,
     required this.orderId,
     required this.operationType,
     required this.paymentMethod,
-    this.spendCount, // Null olarsa, points-based redeem
+    this.spendCount,
     this.receiptImage,
+    this.qrDocId,
+    this.qrVerifiedJson,
+    this.ekassaImage,
   });
 
   Map<String, dynamic> toJson() => {
@@ -47,7 +57,9 @@ class StartRedeemParams {
         'orderId': orderId,
         'operationType': operationType,
         'paymentMethod': paymentMethod,
-        'spendCount': spendCount, // Null göndərilə bilər
+        'spendCount': spendCount,
+        'qrDocId': qrDocId,
+        'qrVerifiedJson': qrVerifiedJson,
       };
 }
 

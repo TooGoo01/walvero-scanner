@@ -60,6 +60,7 @@ dependencies:
   confetti: ^0.8.0
   image_picker: ^1.0.7
   http_parser: ^4.0.2
+  path_provider: ^2.1.4
 
 
 dev_dependencies:

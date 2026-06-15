@@ -9,7 +9,9 @@ import 'package:flutter/services.dart' show FilteringTextInputFormatter;
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:mobile_scanner/mobile_scanner.dart';
 
+import '../../../../data/data_sources/remote/ekassa_image_fetcher.dart';
 import '../../../../core/constant/colors.dart';
 import '../../../../core/constant/images.dart';
 import '../../../../core/error/failures.dart';
@@ -64,6 +66,13 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
 
   // Çek OCR: branch və ya tenant requireReceiptOcr=true olduqda pay rejimi üçün məcburi.
   File? _receiptImage;
+
+  // QR doc-id (çekin üzərindəki QR-dan oxunmuş e-kassa.gov.az doc parametri).
+  String? _qrDocId;
+
+  // Flutter cihazından AZ ISP-də fetch edilmiş e-kassa JPEG (temp file).
+  // Backend Azure DC IP block-u görə Flutter tərəfdən fetch edir.
+  File? _ekassaImageFile;
 
   // Animasiya controllers
   // confetti removed
@@ -422,6 +431,17 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       );
       return;
     }
+
+    // QR verification — tenant/branch requireQrVerification=true olduqda QR mütləqdir.
+    if ((customer?.requireQrVerification ?? false) && needReceipt && (_qrDocId == null || _qrDocId!.isEmpty)) {
+      setState(() => _isSubmitting = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Çekdə QR kod yoxdur və ya oxunmadı. QR kodlu çek təqdim edin.'),
+        ),
+      );
+      return;
+    }
     final File? receiptImage = needReceipt ? _receiptImage : null;
 
     final params = StartRedeemParams(
@@ -432,6 +452,8 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       paymentMethod: paymentMethodStr,
       spendCount: spendCount,
       receiptImage: receiptImage,
+      qrDocId: _qrDocId,
+      ekassaImage: _ekassaImageFile,
     );
 
     if (!mounted) return;
@@ -454,7 +476,11 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         }
         return null;
       }
-      return File(picked.path);
+      final file = File(picked.path);
+      // QR scan + WebView capture sinxron — şəkildən sonra modal açılsın, bağlanmasa
+      // user submit edə bilməsin. Uğursuz olarsa silent fallback, OCR axarına düşür.
+      await _tryDecodeQrAndVerify(file);
+      return file;
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -462,6 +488,52 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         );
       }
       return null;
+    }
+  }
+
+  /// Şəkildə QR varsa doc-id-ni çıxar və `_qrDocId`-yə yaz. Backend həmin id ilə
+  /// birbaşa e-kassa endpoint-dən çekin şəklini fetch edir.
+  Future<void> _tryDecodeQrAndVerify(File file) async {
+    debugPrint('[QR DEBUG] _tryDecodeQrAndVerify called. file=${file.path}');
+    try {
+      final ctrl = MobileScannerController();
+      final BarcodeCapture? result = await ctrl.analyzeImage(file.path);
+      await ctrl.dispose();
+
+      if (result == null) {
+        debugPrint('[QR DEBUG] analyzeImage returned null — şəkildə QR tapılmadı');
+        if (mounted) setState(() => _qrDocId = null);
+        return;
+      }
+      debugPrint('[QR DEBUG] analyzeImage barcodes count=${result.barcodes.length}');
+      if (result.barcodes.isEmpty) {
+        if (mounted) setState(() => _qrDocId = null);
+        return;
+      }
+      final raw = result.barcodes.first.rawValue ?? '';
+      debugPrint('[QR DEBUG] raw=$raw');
+      final match =
+          RegExp(r'monitoring\.e-kassa\.gov\.az/.*?[?&#]doc=([A-Za-z0-9_\-]+)',
+                  caseSensitive: false)
+              .firstMatch(raw);
+      if (match == null) {
+        debugPrint('[QR DEBUG] QR var amma e-kassa URL deyil');
+        if (mounted) setState(() => _qrDocId = null);
+        return;
+      }
+      final docId = match.group(1)!;
+      debugPrint('[QR DEBUG] docId extracted: $docId');
+      if (mounted) setState(() => _qrDocId = docId);
+
+      // E-kassa image-i Flutter cihazından fetch et (AZ ISP — endpoint açıqdır).
+      // URL template lookup response-dan gəlir (customer state-də), ya da default.
+      final customerState = mounted ? context.read<RedeemBloc>().state.customer : null;
+      final urlTemplate = customerState?.ekassaUrlTemplate ??
+          'https://monitoring.e-kassa.gov.az/pks-monitoring/2.0.0/documents/{docId}';
+      final ekassaFile = await EkassaImageFetcher.fetchAsync(docId, urlTemplate);
+      if (mounted) setState(() => _ekassaImageFile = ekassaFile);
+    } catch (e, st) {
+      debugPrint('[QR DEBUG] EXCEPTION: $e\n$st');
     }
   }
 

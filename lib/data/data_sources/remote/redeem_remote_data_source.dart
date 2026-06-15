@@ -127,6 +127,12 @@ class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
       if (params.spendCount != null) {
         request.fields['spendCount'] = params.spendCount.toString();
       }
+      if (params.qrDocId != null && params.qrDocId!.isNotEmpty) {
+        request.fields['qrDocId'] = params.qrDocId!;
+      }
+      if (params.qrVerifiedJson != null && params.qrVerifiedJson!.isNotEmpty) {
+        request.fields['qrVerifiedJson'] = params.qrVerifiedJson!;
+      }
 
       final file = params.receiptImage!;
       final mimeType = _guessImageMime(file.path);
@@ -135,6 +141,17 @@ class RedeemRemoteDataSourceImpl implements RedeemRemoteDataSource {
         file.path,
         contentType: MediaType.parse(mimeType),
       ));
+
+      // Flutter-in fetch etdiyi e-kassa JPEG (varsa) ikinci multipart file kimi göndər.
+      if (params.ekassaImage != null) {
+        final ekassaFile = params.ekassaImage!;
+        final ekassaMime = _guessImageMime(ekassaFile.path);
+        request.files.add(await http.MultipartFile.fromPath(
+          'ekassaImage',
+          ekassaFile.path,
+          contentType: MediaType.parse(ekassaMime),
+        ));
+      }
 
       final streamed = await client.send(request);
       response = await http.Response.fromStream(streamed);

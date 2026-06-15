@@ -20,6 +20,8 @@ class LookupCard extends Equatable {
   final int earnCount; // Qazanma əməliyyat sayı
   final int spendCount; // Xərcləmə əməliyyat sayı
   final bool requireReceiptOcr; // Tenant-level feature flag: redeem zamanı çek şəkli icbaridir
+  final bool requireQrVerification; // Tenant/branch flag: QR olmadan submit blok
+  final String? ekassaUrlTemplate; // Tenant config: e-kassa URL template `{docId}` ilə
 
   const LookupCard({
     required this.success,
@@ -38,6 +40,8 @@ class LookupCard extends Equatable {
     this.earnCount = 0,
     this.spendCount = 0,
     this.requireReceiptOcr = false,
+    this.requireQrVerification = false,
+    this.ekassaUrlTemplate,
   });
 
   // ProgressBased kart yoxlaması
@@ -62,5 +66,7 @@ class LookupCard extends Equatable {
         freeRewardLabel,
         currency,
         requireReceiptOcr,
+        requireQrVerification,
+        ekassaUrlTemplate,
       ];
 }
