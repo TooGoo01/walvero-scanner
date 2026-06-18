@@ -420,9 +420,12 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         ? (_paymentMethod == PaymentMethod.cash ? 'cash' : 'card')
         : 'balance';
 
-    // Receipt OCR — branch/tenant requireReceiptOcr=true olduqda earn + pay üçün məcburi.
-    // İstifadəçi əvvəlcə _buildReceiptCaptureCard vasitəsilə şəkili çəkir; burada təsdiq edirik.
+    // Receipt OCR — branch/tenant requireReceiptOcr=true olduqda yalnız earn rejimi üçün məcburi.
+    // Pay (bonusla ödəmə) rejimində kassir yalnız bonus hissəni daxil etdiyi üçün backend OCR
+    // amount tolerance check-i skip edir (RedeemService.cs:358 `delta > 0` gate). Bununla
+    // uyğun olaraq scanner də pay rejimində çek tələb etmir.
     final needReceipt = (customer?.requireReceiptOcr ?? false) &&
+        _mode == RedeemMode.earn &&
         !(isProgressBased && _redeemType == RedeemType.freeReward);
     if (needReceipt && _receiptImage == null) {
       setState(() => _isSubmitting = false);
@@ -1197,9 +1200,11 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 14),
 
-        // ── Receipt OCR (earn + pay hər iki rejimi — branch/tenant requireReceiptOcr=true olduqda) ──
+        // ── Receipt OCR (yalnız earn rejimi — branch/tenant requireReceiptOcr=true olduqda) ──
+        // Pay rejimində backend OCR-i skip edir; capture kartı da göstərmirik.
         if (customer != null &&
             (customer.requireReceiptOcr) &&
+            _mode == RedeemMode.earn &&
             !(customer.isProgressBased && _redeemType == RedeemType.freeReward))
           _buildReceiptCaptureCard(),
 
