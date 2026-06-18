@@ -277,58 +277,73 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
       context: context,
       barrierDismissible: false,
       builder: (ctx) {
-        return AlertDialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          title: Text(l.otpRequired),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (infoMessage != null && infoMessage.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 8),
-                  child:
-                      Text(infoMessage, style: const TextStyle(fontSize: 13)),
-                ),
-              TextField(
-                controller: otpController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: l.smsCode,
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
+        // Double-tap protection: button basıldıqda isSubmitting=true qoyulur,
+        // həm Confirm həm Cancel disable olunur, dialog dərhal pop edilir ki,
+        // ikinci tap heç vaxt çatmasın. Backend tərəfdə atomic claim də
+        // race-i təkrar tutur — iki layer defense.
+        bool isSubmitting = false;
+        return StatefulBuilder(
+          builder: (ctx, setLocalState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: Text(l.otpRequired),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (infoMessage != null && infoMessage.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Text(infoMessage,
+                          style: const TextStyle(fontSize: 13)),
+                    ),
+                  TextField(
+                    controller: otpController,
+                    keyboardType: TextInputType.number,
+                    enabled: !isSubmitting,
+                    decoration: InputDecoration(
+                      labelText: l.smsCode,
+                      border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                  ),
+                ],
               ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(ctx).pop(),
-              child: Text(l.cancel),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: kPrimaryColor,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12)),
-              ),
-              onPressed: () {
-                final otp = otpController.text.trim();
-                if (otp.isEmpty) return;
-                context.read<RedeemBloc>().add(
-                      RedeemOtpSubmitted(
-                        ConfirmRedeemOtpParams(
-                          requestId: redeemRequestId,
-                          otpCode: otp,
-                        ),
-                      ),
-                    );
-                Navigator.of(ctx).pop();
-              },
-              child: Text(l.confirm,
-                  style: const TextStyle(color: Colors.white)),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: isSubmitting
+                      ? null
+                      : () => Navigator.of(ctx).pop(),
+                  child: Text(l.cancel),
+                ),
+                ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: kPrimaryColor,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
+                  ),
+                  onPressed: isSubmitting
+                      ? null
+                      : () {
+                          final otp = otpController.text.trim();
+                          if (otp.isEmpty) return;
+                          setLocalState(() => isSubmitting = true);
+                          context.read<RedeemBloc>().add(
+                                RedeemOtpSubmitted(
+                                  ConfirmRedeemOtpParams(
+                                    requestId: redeemRequestId,
+                                    otpCode: otp,
+                                  ),
+                                ),
+                              );
+                          Navigator.of(ctx).pop();
+                        },
+                  child: Text(l.confirm,
+                      style: const TextStyle(color: Colors.white)),
+                ),
+              ],
+            );
+          },
         );
       },
     );
