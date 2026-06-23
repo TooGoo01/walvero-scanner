@@ -64,7 +64,7 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
   Timer? _lookupDebounceTimer;
   int? _selectedProgramId;
 
-  // Çek OCR: branch və ya tenant requireReceiptOcr=true olduqda pay rejimi üçün məcburi.
+  // Çek OCR: branch və ya tenant requireReceiptOcr=true olduqda həm earn, həm pay rejimi üçün məcburi.
   File? _receiptImage;
 
   // QR doc-id (çekin üzərindəki QR-dan oxunmuş e-kassa.gov.az doc parametri).
@@ -435,12 +435,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         ? (_paymentMethod == PaymentMethod.cash ? 'cash' : 'card')
         : 'balance';
 
-    // Receipt OCR — branch/tenant requireReceiptOcr=true olduqda yalnız earn rejimi üçün məcburi.
-    // Pay (bonusla ödəmə) rejimində kassir yalnız bonus hissəni daxil etdiyi üçün backend OCR
-    // amount tolerance check-i skip edir (RedeemService.cs:358 `delta > 0` gate). Bununla
-    // uyğun olaraq scanner də pay rejimində çek tələb etmir.
+    // Receipt OCR — branch/tenant requireReceiptOcr=true olduqda həm earn, həm pay üçün məcburi.
+    // Pay (bonusla ödəmə) rejimində backend OCR amount tolerance check-i skip edir
+    // (RedeemService.cs:358 `delta > 0` gate), lakin çek şəkli + QR doc-id yenə də upload/store olunur.
     final needReceipt = (customer?.requireReceiptOcr ?? false) &&
-        _mode == RedeemMode.earn &&
         !(isProgressBased && _redeemType == RedeemType.freeReward);
     if (needReceipt && _receiptImage == null) {
       setState(() => _isSubmitting = false);
@@ -1215,11 +1213,10 @@ class _HomeViewState extends State<HomeView> with TickerProviderStateMixin {
         ),
         const SizedBox(height: 14),
 
-        // ── Receipt OCR (yalnız earn rejimi — branch/tenant requireReceiptOcr=true olduqda) ──
-        // Pay rejimində backend OCR-i skip edir; capture kartı da göstərmirik.
+        // ── Receipt OCR (earn + pay rejimi — branch/tenant requireReceiptOcr=true olduqda) ──
+        // Pay rejimində backend OCR amount check-i skip edir, lakin çek şəkli yenə məcburi.
         if (customer != null &&
             (customer.requireReceiptOcr) &&
-            _mode == RedeemMode.earn &&
             !(customer.isProgressBased && _redeemType == RedeemType.freeReward))
           _buildReceiptCaptureCard(),
 
